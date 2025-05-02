@@ -1,0 +1,128 @@
+```{r}
+#loading packages
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+```
+```{r}
+#loading dataframe
+raw_data <- as.data.frame(irltim)
+```
+
+```{r}
+view(cleaned_data)
+```
+
+#Data modelling- linear mixed model(with year=2015)
+```{r}
+df_2015<-cleaned_data%>%
+  filter(Year==2015)%>%
+  mutate(
+    Gender=factor(Gender),
+    Parent_Educ=factor(Parent_Educ),
+    Parent_Support=factor(Parent_Support),
+    Location = factor(Location),
+    Book_Availability = factor(Book_Availability),
+    Teacher_Shortage = factor(Teacher_Shortage),
+    Percent_Affluent = factor(Percent_Affluent),
+    Percent_Disadvantaged = factor(Percent_Disadvantaged)
+  )
+lmm_model1<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged + 
+                  (1 | School_Id), data = df_2015)
+summary(lmm_model1)
+```
+Fixed effects- the coefficients for each of your predictors represents estimated change in scores associated with each predictor.
+Random Effects can be taken as Variability due to School_ID.
+
+```{r}
+plot(lmm_model1)
+```
+```{r}
+qqnorm(resid(lmm_model1))
+qqline(resid(lmm_model1))
+```
+```{r}
+cooksd1 <- cooks.distance(lmm_model1)
+plot(cooksd1, main = "Cook's Distance", pch = "*", cex = 1.5)
+abline(h = 4/length(cooksd1), col = "red") 
+influential1 <- as.numeric(names(cooksd1)[(cooksd1 > (4/length(cooksd1)))])
+df_Year[influential1, ]
+```
+
+```{r}
+jtools::summ(lmm_model1)
+```
+
+#linear mixed model(with year=2019)
+```{r}
+df_2019<-cleaned_data%>%
+  filter(Year==2019)%>%
+  mutate(
+    Gender=factor(Gender),
+    Parent_Educ=factor(Parent_Educ),
+    Parent_Support=factor(Parent_Support),
+    Location = factor(Location),
+    Book_Availability = factor(Book_Availability),
+    Teacher_Shortage = factor(Teacher_Shortage),
+    Percent_Affluent = factor(Percent_Affluent),
+    Percent_Disadvantaged = factor(Percent_Disadvantaged)
+  )
+lmm_model2<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged + 
+                  (1 | School_Id), data = df_2019)
+summary(lmm_model2)
+```
+
+```{r}
+plot(lmm_model2)
+```
+
+```{r}
+qqnorm(resid(lmm_model2))
+qqline(resid(lmm_model2))
+```
+```{r}
+cooksd2 <- cooks.distance(lmm_model2)
+plot(cooksd2, main = "Cook's Distance", pch = "*", cex = 1.5)
+abline(h = 4/length(cooksd2), col = "red") 
+influential2 <- as.numeric(names(cooksd2)[(cooksd2 > (4/length(cooksd2)))])
+df_2019[influential2, ]
+```
+
+```{r}
+jtools::summ(lmm_model2)
+```
+
+#linear mixed model(both years)
+```{r}
+df_Year<-cleaned_data%>%
+  filter(Year %in% c(2015,2019))%>%
+  mutate(
+    Gender=factor(Gender),
+    Parent_Educ=factor(Parent_Educ),
+    Parent_Support=factor(Parent_Support),
+    Location = factor(Location),
+    Book_Availability = factor(Book_Availability),
+    Teacher_Shortage = factor(Teacher_Shortage),
+    Percent_Affluent = factor(Percent_Affluent),
+    Percent_Disadvantaged = factor(Percent_Disadvantaged)
+  )
+lmm_model3<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged + 
+                  (1 | School_Id), data = df_Year)
+summary(lmm_model3)
+```
+
+```{r}
+plot(lmm_model3)
+```
+```{r}
+qqnorm(resid(lmm_model3))
+qqline(resid(lmm_model3))
+```
+```{r}
+cooksd3 <- cooks.distance(lmm_model3)
+plot(cooksd3, main = "Cook's Distance", pch = "*", cex = 1.5)
+abline(h = 4/length(cooksd3), col = "red") 
+influential3 <- as.numeric(names(cooksd3)[(cooksd3 > (4/length(cooksd3)))])
+df_Year[influential3, ]
+```

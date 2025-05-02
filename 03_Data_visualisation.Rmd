@@ -1,0 +1,108 @@
+```{r}
+#loading packages
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+#loading dataframe
+raw_data <- as.data.frame(irltim)
+```
+
+```{r}
+view(cleaned_data)
+```
+
+#Data visualization
+
+```{r}
+ggplot(cleaned_data, aes(x = Scores)) +
+  geom_histogram(binwidth = 20, fill = "red", color = "black", alpha = 0.7) +
+  facet_wrap(~ Year) +
+  ggtitle("Distribution of Scores by Year") +
+  xlab("Scores") +
+  ylab("Frequency") 
+```
+
+```{r}
+ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Gender)) +
+  geom_boxplot(alpha = 0.6) + 
+  ggtitle('Scores based on Gender w.r.t Year') +
+  scale_fill_manual(values = c("pink", "blue")) 
+```
+
+
+```{r}
+ggplot(cleaned_data, aes(x = Parent_Educ, y = Scores, fill = Year)) +
+  geom_boxplot(alpha = 0.6) + 
+  ggtitle('Parent Education vs Scores') +
+  scale_fill_brewer(palette = "Set3")
+```
+
+
+```{r}
+ggplot(cleaned_data, aes(x = Parent_Support, y = Scores, fill = Year)) +
+  geom_boxplot(alpha=0.6) + 
+  ggtitle('Parent Support vs Scores')
+```
+                    
+```{r}
+ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Computer_Access)) +
+  geom_boxplot(color = "black", alpha = 0.6) + 
+  ggtitle('Computer Access vs Score based on Year') +
+  scale_fill_manual(values = c("lightgreen", "red")) +
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Location)) + 
+  geom_violin(color = "black", alpha = 0.6) + 
+  ggtitle('Distribution of Scores by Location') + 
+  scale_fill_brewer(palette = "Set2") 
+```
+The shape of the violin plot represents density of scores within that specific category.The more wider the plots are the higher the density in that specific range. also narrower plots shows lower density which indicates only few students fall in that particular range.Also, if the scores are concentrated in the wider section of the violin it indicates less variability and scores that are more spread out indicates more variablity.
+```{r}
+ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Book_Availability)) + 
+  geom_violin(color = "black", alpha = 0.6) + 
+  ggtitle('Distribution of Scores by Book Availability') + 
+  scale_fill_manual(values=c("lightblue","lightgreen","orange","brown","navyblue"))
+```
+```{r}
+ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Teacher_Shortage)) + 
+  geom_violin(color = "black", alpha = 0.6) + 
+  ggtitle('Distribution of Scores by Teacher Shortage Based on Years') + 
+  scale_fill_brewer(palette = "Set3")
+```
+```{r}
+ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Percent_Affluent)) + 
+  geom_violin(alpha = 0.6) + 
+  ggtitle('Distribution of Scores by Percent Affluent Based on Years') + 
+  scale_fill_brewer(palette = "Set1")
+```
+```{r}
+ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Percent_Disadvantaged)) + 
+  geom_violin(alpha = 0.6) + 
+  ggtitle('Distribution of Scores by Percent Disadvantaged Based on Years') + 
+  scale_fill_brewer(palette = "Set1")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
