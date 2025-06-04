@@ -15,25 +15,72 @@ view(cleaned_data)
 ```
 
 #Data modelling- linear mixed model(with year=2015)
+
 ```{r}
 df_2015<-cleaned_data%>%
   filter(Year==2015)%>%
   mutate(
-    Gender=factor(Gender),
-    Parent_Educ=factor(Parent_Educ),
-    Parent_Support=factor(Parent_Support),
-    Location = factor(Location),
-    Book_Availability = factor(Book_Availability),
-    Teacher_Shortage = factor(Teacher_Shortage),
-    Percent_Affluent = factor(Percent_Affluent),
-    Percent_Disadvantaged = factor(Percent_Disadvantaged)
-  )
-lmm_model1<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged + 
-                  (1 | School_Id), data = df_2015)
+    Gender=factor(Gender,levels=c("GIRL","BOY"),ordered=TRUE),
+    Parent_Educ=factor(Parent_Educ,levels=c("less than ISCED2",
+                                          "ISCED2",
+                                          "ISCED3","ISCED4","ISCED6",
+                                          "ISCED7 or 8"),ordered= TRUE),
+    Parent_Support=factor(Parent_Support,levels=c("LOW","MEDIUM","HIGH",
+                                                  "VERY HIGH"),ordered=TRUE),
+    Location = factor(Location,levels=c("Urban","Suburban",
+                                        "Large Town/City",
+                                        "Small Town/Village",
+                                        "Remote Rural"),ordered= TRUE),
+    Book_Availability = factor(Book_Availability,levels=c("Few","Moderate","Good",
+                                                          "Very Good",
+                                                           "Excellent"),
+                                                            ordered=TRUE),
+    Teacher_Shortage =factor(Teacher_Shortage,levels=c("None","Low","Moderate",
+                                                       "High"),ordered=TRUE),
+    Percent_Affluent =factor(Percent_Affluent,levels=c("Low","Moderate",
+                                                       "High","Excellent"),
+                                                             ordered=TRUE),
+    Percent_Disadvantaged=factor(Percent_Disadvantaged,
+                                 levels=c("Low", "Moderate","High","Severe"),
+                                                                 ordered=TRUE)
+)
+
+lmm_model1<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged+ Year
+                   +(1 | School_Id), data = df_2015)
 summary(lmm_model1)
 ```
-Fixed effects- the coefficients for each of your predictors represents estimated change in scores associated with each predictor.
-Random Effects can be taken as Variability due to School_ID.
+**Interpretation**
+
+*Random effects*
+*B*Baseline scores definition*B*:-
+It is the predicted average score for a given random effect(here School_Id) before we consider the fixed effects.(i.e other predictors).
+Here the model assumes each school has its own baseline score(i.e its own average starting score)
+
+A variance of 362.3 for the random intercept of school_id indicates the value by which the average scores vary across the schools.So therefore schools differ by a std.dev of 19.03 points from their baseline scores.
+basically the variance and the std dev shows the spread of these baseline scores across schools.
+This helps to account for the school-level differences in average performance.
+
+Also, we can interpret that the total variance = residual variance+ random effect variance
+                                               = 3027.9+362.3 =3390.2
+                  So the variance partition coefficient(ICC)= 362.3/3390.2= 0.107
+                                                            ~10.7%
+  That is about 11% of the total variance in math scores is due to the differences between schools.
+
+*Fixed effects*
+These are the main effects which we are estimating in the model that represents the average effect of each predictor with respect to the scores. 
+
+Intercept in the model that is 517.9353 is actually the baseline average math score for the reference group.
+Reference group is formed by first level of each ordered categorical variables.Hence, the average math score can be interpreted w.r.t the reference group.
+
+The rest of the predictors having labels like L,Q,C,^4 indicates different trends such as linear, quadratic, cubic, quartic etc since they are ordered factors and R uses polynomial contrasts to test how the response variable changes across these ordered levels.
+
+**Key insights**
+Gender.L :- here boys have on average, 8.8 points higher scores than girls
+(which is the reference group).
+Book_Availability.L :- has a very strong positive linear effect (58.32) on math scores which indicates more accessibility to books resulted in higher scores.
+Percent_disadvantaged.L :- has a significant negative linear effect(-28.17) on math scores which tells that as disadvantage level increases, their scores also see a drop by 28 points.
+Parent_Educ.L:- here it shows as the parent education level increases, scores decreases linearly by 18 points(-18.23) which is an unexpected result.
+Other predictors such as Teacher Shortage, Percent_Affluent,Location, Parent_Support indicates weaker or insignificant effects on math scores(compared to t-value and estimates)
 
 ```{r}
 plot(lmm_model1)
@@ -50,26 +97,42 @@ influential1 <- as.numeric(names(cooksd1)[(cooksd1 > (4/length(cooksd1)))])
 df_Year[influential1, ]
 ```
 
-```{r}
-jtools::summ(lmm_model1)
-```
+
 
 #linear mixed model(with year=2019)
 ```{r}
 df_2019<-cleaned_data%>%
   filter(Year==2019)%>%
   mutate(
-    Gender=factor(Gender),
-    Parent_Educ=factor(Parent_Educ),
-    Parent_Support=factor(Parent_Support),
-    Location = factor(Location),
-    Book_Availability = factor(Book_Availability),
-    Teacher_Shortage = factor(Teacher_Shortage),
-    Percent_Affluent = factor(Percent_Affluent),
-    Percent_Disadvantaged = factor(Percent_Disadvantaged)
+    Gender=factor(Gender,levels=c("GIRL","BOY"),ordered=TRUE),
+    Parent_Educ=factor(Parent_Educ,levels=c("less than ISCED2",
+                                            "ISCED2",
+                                            "ISCED3","ISCED4","ISCED6",
+                                            "ISCED7 or 8"),ordered= TRUE),
+    Parent_Support=factor(Parent_Support,levels=c("LOW","MEDIUM","HIGH",
+                                                  "VERY HIGH"),ordered=TRUE),
+    Location = factor(Location,levels=c("Urban","Suburban",
+                                        "Large Town/City",
+                                        "Small Town/Village",
+                                        "Remote Rural"),ordered= TRUE),
+    Book_Availability = factor(Book_Availability,
+                               levels=c("Few","Moderate","Good",
+                                        "Very Good","Excellent"),
+                                         ordered=TRUE),
+    Teacher_Shortage =factor(Teacher_Shortage,levels=c("None","Low",
+                                                       "Moderate","High"),
+                                                          ordered=TRUE),
+    Percent_Affluent =factor(Percent_Affluent,levels=c("Low","Moderate",
+                                                       "High","Excellent"),
+                                                          ordered=TRUE),
+    Percent_Disadvantaged=factor(Percent_Disadvantaged,
+                                 levels=c("Low","Moderate",
+                                            "High","Severe"),
+                                              ordered=TRUE)
   )
-lmm_model2<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged + 
-                  (1 | School_Id), data = df_2019)
+
+lmm_model2<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged +Year 
+                  +(1 | School_Id), data = df_2019)
 summary(lmm_model2)
 ```
 
@@ -89,28 +152,69 @@ influential2 <- as.numeric(names(cooksd2)[(cooksd2 > (4/length(cooksd2)))])
 df_2019[influential2, ]
 ```
 
-```{r}
-jtools::summ(lmm_model2)
-```
+
 
 #linear mixed model(both years)
 ```{r}
 df_Year<-cleaned_data%>%
-  filter(Year %in% c(2015,2019))%>%
-  mutate(
-    Gender=factor(Gender),
-    Parent_Educ=factor(Parent_Educ),
-    Parent_Support=factor(Parent_Support),
-    Location = factor(Location),
-    Book_Availability = factor(Book_Availability),
-    Teacher_Shortage = factor(Teacher_Shortage),
-    Percent_Affluent = factor(Percent_Affluent),
-    Percent_Disadvantaged = factor(Percent_Disadvantaged)
-  )
-lmm_model3<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged + 
-                  (1 | School_Id), data = df_Year)
+   mutate(
+    Year=factor(Year,levels=c("2015","2019"),ordered=TRUE),
+    Gender=factor(Gender,levels=c("GIRL","BOY"),ordered=TRUE),
+    Parent_Educ=factor(Parent_Educ,levels=c("less than ISCED2",
+                                          "ISCED2",
+                                          "ISCED3","ISCED4","ISCED6",
+                                          "ISCED7 or 8"),ordered= TRUE),
+    Parent_Support=factor(Parent_Support,levels=c("LOW","MEDIUM","HIGH",
+                                                  "VERY HIGH"),ordered=TRUE),
+    Location = factor(Location,levels=c("Urban","Suburban",
+                                        "Large Town/City",
+                                        "Small Town/Village",
+                                        "Remote Rural"),ordered= TRUE),
+    Book_Availability = factor(Book_Availability,
+                               levels=c("Few","Moderate","Good",
+                                        "Very Good","Excellent"),
+                                          ordered=TRUE),
+    Teacher_Shortage =factor(Teacher_Shortage,levels=c("None","Low","Moderate",
+                                                       "High"),ordered=TRUE),
+    Percent_Affluent =factor(Percent_Affluent,levels=c("Low","Moderate",
+                                                       "High","Excellent"),
+                                                             ordered=TRUE),
+    Percent_Disadvantaged=factor(Percent_Disadvantaged,
+                                 levels=c("Low", "Moderate","High","Severe"),
+                                                                 ordered=TRUE)
+)
+
+lmm_model3<-lmer(Scores ~ Gender+ Parent_Educ+ Parent_Support+ Location + Book_Availability + Teacher_Shortage + Percent_Affluent + Percent_Disadvantaged +Year+ (1 | School_Id:Year), data = df_Year)
 summary(lmm_model3)
 ```
+
+```{r}
+library(sjPlot)
+sjPlot::tab_model(lmm_model3,
+                  show.se = TRUE,
+                  show.stat = TRUE,
+                  show.obs = FALSE)
+```
+**Interpretation**
+Here our model takes the random effect of each School-Year combination, It allows to have its own baseline average math scores.
+
+*Random effects*
+There are unique 253 School-Year combinations and the random intercept variance measures how much average math scores differ across these 253 unique groups.That is on average, schools differ from the overall baseline by about 17.28 points.
+Students within the same school-year typically differ from their school's Baseline by about 55 points.
+
+So here variance partition coefficient(ICC)=298.7/3346=0.089
+                                                     ~8.9%
+    That is 8.9% of total variance in math scores is due to the differences between schools and rest of the variation comes from individual student differences.
+
+*Fixed effects & Key insights*
+The intercept 520.1146 is the average math scores for the reference student group.
+
+Gender.L:- that is Boys score on average 6.56 points higher than girls.
+Parent_Educ.L:- This indicates as education level increases, scores decreases by 20 points linearly. Also indicates a strong negative linear trend(significant)
+Book_availability:- Indicates a strong positive linear effect on scores by 57.74 points on scores which indicates more access to books result in higher scores.
+Percent_Disadvantaged:- strong negative linear effect which tells as disadvantage level increases,it results in lower scores(-20.97).
+Year.L:- Doesn't really show any significant difference in average scores between 2015 and 2019.
+Percent_Affluent:- indicates slightly higher scores as result of increase in affluent levels.
 
 ```{r}
 plot(lmm_model3)
@@ -126,3 +230,8 @@ abline(h = 4/length(cooksd3), col = "red")
 influential3 <- as.numeric(names(cooksd3)[(cooksd3 > (4/length(cooksd3)))])
 df_Year[influential3, ]
 ```
+```{r}
+install.packages("lattice")
+dotplot(ranef(lmm_model3, condVar=TRUE))
+```
+
