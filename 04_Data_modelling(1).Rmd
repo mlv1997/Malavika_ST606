@@ -1,0 +1,158 @@
+```{r}
+#loading packages
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+library(sjPlot)
+```
+
+```{r}
+#loading dataframe
+raw_data <- as.data.frame(irltim)
+```
+
+```{r}
+view(cleaned_data)
+```
+
+
+#linear mixed model(including Gender interactions) 
+```{r}
+lmm_modelg1<- lmer(
+  Scores ~ Gender * (Parent_Educ + Parent_Support + Computer_Access + Location +
+          Book_Availability + Teacher_Shortage + Percent_Disadvantaged + Year) +
+            (1 | School_Id:Year),
+  data = train_data)
+
+# Summary table
+sjPlot::tab_model(lmm_modelg1,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+*Model Diagnostics*
+```{r}
+library(performance)
+check_collinearity(lmm_modelg1) %>% plot()
+check_normality(lmm_modelg1) %>% plot()
+check_heteroscedasticity(lmm_modelg1) %>% plot()
+check_outliers(lmm_modelg1) %>% plot()
+```
+
+
+
+#linear mixed model(including Year interactions)
+```{r}
+lmm_modely1<- lmer(
+  Scores ~ Year * (Parent_Educ + Parent_Support + Computer_Access + Location +
+          Book_Availability + Teacher_Shortage + Percent_Disadvantaged) +
+            (1 | School_Id:Year),
+  data = df_Year)
+
+# Summary table
+sjPlot::tab_model(lmm_modely1,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+
+#linear mixed model(including other interactions)
+```{r}
+lmm_modeli1<- lmer(
+  Scores ~ Parent_Educ * (Gender+ Parent_Support + Computer_Access + Location +
+          Book_Availability + Teacher_Shortage + Percent_Disadvantaged + Year) +
+            (1 | School_Id:Year),
+  data = train_data)
+# Summary table
+sjPlot::tab_model(lmm_modeli1,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+
+```{r}
+lmm_modeli2<- lmer(
+  Scores ~ Parent_Support * (Gender+ Parent_Educ + Computer_Access + Location +
+          Book_Availability + Teacher_Shortage + Percent_Disadvantaged + Year) +
+            (1 | School_Id:Year),
+  data = df_Year)
+# Summary table
+sjPlot::tab_model(lmm_modeli2,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+
+```{r}
+lmm_modeli3<- lmer(
+  Scores ~ Computer_Access* (Gender+ Parent_Support+ Parent_Educ+ Location +
+          Book_Availability + Teacher_Shortage + Percent_Disadvantaged + Year) +
+            (1 | School_Id:Year),
+  data = df_Year)
+# Summary table
+sjPlot::tab_model(lmm_modeli3,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+
+```{r}
+lmm_modeli4<- lmer(
+  Scores ~ Location* (Gender+ Parent_Support+ Parent_Educ+ Computer_Access +
+          Book_Availability + Teacher_Shortage + Percent_Disadvantaged + Year) +
+            (1 | School_Id:Year),
+  data = df_Year)
+# Summary table
+sjPlot::tab_model(lmm_modeli4,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+
+```{r}
+lmm_modeli5<- lmer(
+  Scores ~ Book_Availability* (Gender+ Parent_Support+ Parent_Educ+ Computer_Access +
+          Location + Teacher_Shortage + Percent_Disadvantaged + Year) +
+            (1 | School_Id:Year),
+  data = df_Year)
+# Summary table
+sjPlot::tab_model(lmm_modeli5,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+
+```{r}
+lmm_modeli6<- lmer(
+  Scores ~ Teacher_Shortage* (Gender+ Parent_Support+ Parent_Educ+ Computer_Access +
+          Book_Availability+ Location + Percent_Disadvantaged + Year) +
+            (1 | School_Id:Year),
+  data = df_Year)
+# Summary table
+sjPlot::tab_model(lmm_modeli6,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+
+```{r}
+lmm_modeli7<- lmer(
+  Scores ~ Percent_Disadvantaged* (Gender+ Parent_Support+ Parent_Educ+ Computer_Access +
+          Book_Availability+ Location + Teacher_Shortage + Year) +
+            (1 | School_Id:Year),
+  data = df_Year)
+# Summary table
+sjPlot::tab_model(lmm_modeli7,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
