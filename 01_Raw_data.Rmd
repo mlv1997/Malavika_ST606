@@ -1,0 +1,13 @@
+```{r}
+#loading packages
+library(dplyr)
+library(tidyverse)
+load("irltim.Rdata")#loaded the Ireland math data
+```
+
+
+```{r}
+#Named it as raw_data after converting it into a dataframe
+raw_data <- as.data.frame(irltim)
+view(raw_data)
+```
