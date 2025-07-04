@@ -2,14 +2,21 @@
 #loading packages
 library(dplyr)
 library(tidyverse)
-```
-```{r}
-#loading dataframe
-raw_data <- as.data.frame(irltim)
+load("irltim.Rdata")#loaded the Ireland math data
 ```
 
+
 ```{r}
-#data cleaning
+#Named it as raw_data after converting it into a dataframe
+raw_data <- as.data.frame(irltim)
+view(raw_data)
+```
+
+#Data cleaning and pre-processing
+
+```{r}
+#Cleaned the raw data by renaming variables and its levels and named it as cleaned_data
+#wanted to keep the raw data as it is(as it is the original dataset)
 cleaned_data <- raw_data %>%
   select(stu_id, math, sex,parent_educ, parent_support, school_id, percent_affluent, percent_disadvantaged, computer, book, shortage_math_teachers, location, year) %>%
   rename(
@@ -22,12 +29,11 @@ cleaned_data <- raw_data %>%
     Book_Availability = book,
     Teacher_Shortage = shortage_math_teachers,
     School_Id = school_id,
-    Percent_Affluent = percent_affluent,
+    Percent_Affluent=percent_affluent,
     Percent_Disadvantaged = percent_disadvantaged,
     Location = location,
     Year = year
-    
-  )
+ )
 
 
 cleaned_data <- cleaned_data %>%
@@ -39,14 +45,6 @@ cleaned_data <- cleaned_data %>%
     Book_Availability %in% c("MORE THAN 200", "ENOUGH TO FILL THREE OR MORE BOOKCASES (MORE THAN 200)") ~ "Excellent",
     TRUE ~ Book_Availability
   ))                                      
-
-
-cleaned_data$Percent_Affluent <- dplyr::recode(cleaned_data$Percent_Affluent,
-  "0 TO 10%" = "Low",
-  "11 TO 25%" = "Moderate",
-  "26 TO 50%" = "High",
-  "MORE THAN 50%" = "Excellent"
-)
 
 cleaned_data$Percent_Disadvantaged<-dplyr::recode(cleaned_data$Percent_Disadvantaged,
                                          "0 TO 10%" = "Low",
@@ -71,83 +69,29 @@ cleaned_data$Location <- dplyr::recode(cleaned_data$Location,
   "MEDIUM SIZE CITY OR LARGE TOWN" = "Large Town/City",
   "SMALL TOWN OR VILLAGE" = "Small Town/Village",
   "REMOTE RURAL" = "Remote Rural"
+  
+)
+cleaned_data$Percent_Affluent<- dplyr::recode(cleaned_data$Percent_Affluent,
+                                        "0 TO 10%" = "Low",
+                                        "11 TO 25%" = "Moderate",
+                                        "26 TO 50%" = "High",
+                                        "MORE THAN 50%" = "Excellent"
 )
 
 View(cleaned_data)
+```
 
+
+```{r}
+#checks for missing values
+any(is.na(cleaned_data))
+```
+
+```{r}
+sum(is.na(cleaned_data))
+```
+```{r}
 colSums(is.na(cleaned_data))
 ```
 
-```{r}
-#Data preprocessing
-# Categorical variables (nominal, unordered)
-cleaned_data$Gender <- as.factor(cleaned_data$Gender)
-cleaned_data$Location <- as.factor(cleaned_data$Location)
-cleaned_data$School_Id <- as.factor(cleaned_data$School_Id)
-cleaned_data$Computer_Access <- as.factor(cleaned_data$Computer_Access)
-cleaned_data$Year <- as.factor(cleaned_data$Year)
-
-
-# Ordinal variables (ordered from low to high)
-cleaned_data$Parent_Educ <- factor(cleaned_data$Parent_Educ,
-                         levels = c("less than ISCED2", "ISCED2", "ISCED3", "ISCED4", "ISCED6", "ISCED7 or 8"),
-                         ordered = TRUE)
-
-cleaned_data$Parent_Support <- factor(cleaned_data$Parent_Support,
-                            levels = c("LOW", "MEDIUM", "HIGH", "VERY HIGH"),
-                            ordered = TRUE)
-
-cleaned_data$Percent_Affluent <- factor(cleaned_data$Percent_Affluent,
-                              levels = c("Low", "Moderate", "High", "Excellent"),
-                              ordered = TRUE)
-
-cleaned_data$Percent_Disadvantaged <- factor(cleaned_data$Percent_Disadvantaged,
-                                   levels = c("Low", "Moderate", "High", "Severe"),
-                                   ordered = TRUE)
-
-cleaned_data$Book_Availability <- factor(cleaned_data$Book_Availability,
-                               levels = c("Few", "Moderate", "Good", "Very Good", "Excellent"),
-                               ordered = TRUE)
-
-cleaned_data$Teacher_Shortage <- factor(cleaned_data$Teacher_Shortage,
-                              levels = c("None", "Low", "Moderate", "High"),
-                              ordered = TRUE)
-
-cleaned_data$Year <- factor(cleaned_data$Year,
-                              levels = c("2015","2019"),
-                              ordered = TRUE)
-
-str(cleaned_data)
-valid_factors <- sapply(cleaned_data, function(x) !(is.factor(x) && nlevels(x) < 2))
-cleaned_data_filtered <- cleaned_data[, valid_factors]
-valid_factors
-#model <- lm(Scores ~ Gender + Parent_Educ + Parent_Support + 
-#            Percent_Affluent + Percent_Disadvantaged +
-#            Computer_Access + Book_Availability + Teacher_Shortage + 
-#            Location, Year, data=cleaned_data)
-model<- lm(Scores ~ .-School_Id-ID-Year, data = cleaned_data_filtered)
-summary(model)
-```
-```{r}
-par(mfrow = c(2, 2))  # 4 plots in one view
-plot(model)
-```
-```{r warning=FALSE}
-install.packages("car")
-library(car)
-vif(model)
-```
-
-
-
-
-```{r}
-# Cook’s distance
-cooksd <- cooks.distance(model)
-plot(cooksd, pch="*", cex=1.5, main="Cook’s Distance")
-abline(h = 4/length(cooksd), col="red")
-
-influential <- as.numeric(names(cooksd)[(cooksd > (4/length(cooksd)))])
-cleaned_data_filtered[influential, ]
-```
-
+No missing values exist.
