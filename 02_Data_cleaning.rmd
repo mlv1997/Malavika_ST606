@@ -3,21 +3,17 @@
 library(dplyr)
 library(tidyverse)
 load("irltim.Rdata")#loaded the Ireland math data
+view(irltim)
 ```
 
 
-```{r}
-#Named it as raw_data after converting it into a dataframe
-raw_data <- as.data.frame(irltim)
-view(raw_data)
-```
 
 #Data cleaning and pre-processing
 
 ```{r}
 #Cleaned the raw data by renaming variables and its levels and named it as cleaned_data
-#wanted to keep the raw data as it is(as it is the original dataset)
-cleaned_data <- raw_data %>%
+#kept the original data as it is(irltim)
+cleaned_data <- irltim %>%
   select(stu_id, math, sex,parent_educ, parent_support, school_id, percent_affluent, percent_disadvantaged, computer, book, shortage_math_teachers, location, year) %>%
   rename(
     ID = stu_id,
@@ -95,3 +91,43 @@ colSums(is.na(cleaned_data))
 ```
 
 No missing values exist.
+
+```{r}
+cleaned_data[!complete.cases(cleaned_data), ]
+```
+
+
+
+```{r}
+library(naniar)
+```
+*visualize the missing values per variable(by percentage)*
+```{r}
+vis_miss(cleaned_data)
+```
+*visualize missing values per variable(by count)*
+```{r}
+gg_miss_var(cleaned_data)
+```
+*Missing values summary in tabular format*
+```{r}
+miss_var_summary(cleaned_data)
+```
+*Missing values summary by School_ID*
+```{r}
+miss_by_school<-cleaned_data %>%
+  group_by(School_Id) %>%
+  summarise(
+    total_students = n(),
+    obsvns_missing = sum(is.na(Percent_Affluent)),
+    pct_missing = round(100 * obsvns_missing / total_students, 2)
+  ) %>%
+  arrange(desc(pct_missing)) 
+head(miss_by_school,45)
+```
+
+
+
+
+
+

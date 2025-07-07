@@ -15,7 +15,7 @@ view(cleaned_data)
 
 *Distribution of scores by year Plot*
 ```{r}
- ggplot(cleaned_data, aes(x = factor(Year), y = Scores, fill = factor(Year))) +
+ ggplot(train_data, aes(x = factor(Year), y = Scores, fill = factor(Year))) +
   geom_violin(color = "black", alpha = 0.7, trim = FALSE) +
   geom_boxplot(width = 0.1,fill="white")+
   scale_fill_manual(values = c("brown","steelblue"))+
@@ -47,10 +47,9 @@ ggplot(cleaned_data, aes(x = factor(Year), y = Scores,fill = factor(Year))) +
 ```{r}
 cleaned_data$Parent_Educ<- factor(cleaned_data$Parent_Educ,
                                   levels=c("less than ISCED2","ISCED2","ISCED3",
-                                           "ISCED4","ISCED6","ISCED7 or 8"),
-                                  ordered= TRUE)
+                                           "ISCED4","ISCED6","ISCED7 or 8"))
 cleaned_data$Year<-factor(cleaned_data$Year,levels=c("2015","2019"),ordered=TRUE)
-ggplot(cleaned_data, aes(x = Parent_Educ, y = Scores, fill = Parent_Educ)) +
+ggplot(cleaned_data, aes(x = Parent_Educ, y = Scores, fill = Parent_Educ))+
   geom_boxplot(alpha = 0.6) + 
   ggtitle('Parent Education vs Scores') +
   facet_wrap(~Year)
@@ -120,11 +119,11 @@ ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Teacher_Shortage)) +
 cleaned_data$Percent_Affluent =factor(cleaned_data$Percent_Affluent,
                                       levels=c("Low","Moderate",
                                               "High","Excellent"),ordered=TRUE)
-ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Percent_Affluent)) + 
+ggplot(cleaned_data, aes(x = Gender, y = Scores, fill = Percent_Affluent)) + 
   geom_violin(alpha = 0.6) + 
   ggtitle('Distribution of Scores by Percent Affluent Based on Years') + 
   scale_fill_brewer(palette = "Set1")+
-  facet_wrap(~Gender)
+  facet_wrap(~Year)
 ```
 *Distribution of Scores by Percent Disadvantaged Based on Years*
 ```{r}
@@ -292,6 +291,7 @@ ggplot(filtered_data, aes(x = reorder(School_Location, Scores), y = Scores, fill
   scale_fill_brewer(palette = "Spectral")+
   theme(legend.position = "bottom"))
 ```
+
 
 
 
