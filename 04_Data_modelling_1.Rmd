@@ -59,7 +59,7 @@ df_split <- df_Year %>%
     c("train", "test"),
     size = n(),
     replace = TRUE,
-    prob = c(0.5, 0.5)
+    prob = c(0.7, 0.3)
   )) %>%
   ungroup()
 
