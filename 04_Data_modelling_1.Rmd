@@ -30,7 +30,8 @@ df_Year <- cleaned_data%>%
     Parent_Support=factor(Parent_Support,levels=c("VERY LOW","LOW","MEDIUM","HIGH",
                                                   "VERY HIGH")),
     Computer_Access=factor(Computer_Access,levels=c("YES","NO")),
-    Location = factor(Location,levels=c("Urban","Suburban",
+    Location = factor(Location,levels=c("Urban","Urban_1","Suburban",
+                                        "Suburban_1",
                                         "Large Town/City",
                                         "Small Town/Village",
                                         "Remote Rural")),
@@ -71,8 +72,7 @@ test_data  <- df_split %>% filter(split == "test")
 #lmm model of both years
 ```{r}
 lmm_model31<-lmer(Scores ~ Gender+ Parent_Support+ Parent_Educ+ Computer_Access+
-                   Location + Book_Availability + Teacher_Shortage + Percent_Affluent+ Percent_Disadvantaged
-                  + Year+ (1 | School_Id:Year), 
+                   Location + Book_Availability + Teacher_Shortage + Percent_Affluent+ Percent_Disadvantaged + Year+ (1 | School_Id:Year), 
                   data = train_data)
 
 sjPlot::tab_model(lmm_model31,

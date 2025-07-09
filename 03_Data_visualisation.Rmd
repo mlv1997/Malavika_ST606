@@ -77,12 +77,12 @@ ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Computer_Access)) +
 *Distribution of Scores by Location and Gender*
 ```{r}
 cleaned_data$Location<- factor(cleaned_data$Location,
-                                  levels=c("Urban","Suburban","Large Town/City","Small Town/Village","Remote Rural"),
+                                  levels=c("Urban","Urban_1","Suburban","Suburban_1","Large Town/City","Small Town/Village","Remote Rural"),
                                           ordered= TRUE)
 ggplot(cleaned_data, aes(x = Gender, y = Scores, fill = Location)) + 
   geom_violin(color = "black", alpha = 0.6) + 
   ggtitle('Distribution of Scores by Location and Gender') + 
-   scale_fill_manual(values=c("navyblue","brown","orange","lightgreen","lightblue")) 
+   scale_fill_manual(values=c("navyblue","red","brown","orange","yellow","lightgreen","lightblue")) 
 +facet_wrap(~Year)
 ```
 **Interpretation**
@@ -192,8 +192,8 @@ long_data <- long_data %>%
     Variable == "Gender" ~ factor(Category, levels = c("GIRL", "BOY")),
     Variable == "Parent_Educ" ~ factor(Category, levels = c("less than ISCED2", "ISCED2", "ISCED3", "ISCED4", "ISCED6", "ISCED7 or 8")),
     Variable == "Parent_Support" ~ factor(Category, levels = c("LOW", "MEDIUM", "HIGH", "VERY HIGH")),
-    Variable == "Location" ~ factor(Category, levels = c("Urban", "Suburban", "Large Town/City", 
-                                                         "Small Town/Village", "Remote Rural")),
+    Variable == "Location" ~ factor(Category, levels = c("Urban", "Urban_1","Suburban","Suburban_1",
+                                             "Large Town/City", "Small Town/Village", "Remote Rural")),
     Variable == "Book_Availability" ~ factor(Category, levels = c("Few", "Moderate", "Good", "Very Good", "Excellent")),
     Variable == "Teacher_Shortage" ~ factor(Category, levels = c("None", "Low", "Moderate", "High")),
     Variable == "Percent_Affluent" ~ factor(Category, levels = c("Low", "Moderate", "High", "Excellent")),

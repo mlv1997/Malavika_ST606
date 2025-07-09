@@ -59,9 +59,9 @@ cleaned_data$Teacher_Shortage<-dplyr::recode(cleaned_data$Teacher_Shortage,
 
 cleaned_data$Location <- dplyr::recode(cleaned_data$Location,
   "URBAN, DENSELY POPULATED" = "Urban",
-  "URBAN-DENSELY POPULATED" = "Urban",
+  "URBAN-DENSELY POPULATED" = "Urban_1",
   "SUBURBAN, ON FRINGE OF URBAN AREA" = "Suburban",
-  "SUBURBAN-ON FRINGE OR OUTSKIRTS OF URBAN AREA" = "Suburban",
+  "SUBURBAN-ON FRINGE OR OUTSKIRTS OF URBAN AREA" = "Suburban_1",
   "MEDIUM SIZE CITY OR LARGE TOWN" = "Large Town/City",
   "SMALL TOWN OR VILLAGE" = "Small Town/Village",
   "REMOTE RURAL" = "Remote Rural"
