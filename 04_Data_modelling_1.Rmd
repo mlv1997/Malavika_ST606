@@ -1,0 +1,194 @@
+```{r}
+#loading packages
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+library(sjPlot)
+library(rsample)
+library(ranger)
+library(performance)
+```
+
+
+```{r}
+view(cleaned_data)
+```
+
+
+#Splitting into train and test data 
+```{r}
+df_Year <- cleaned_data%>%
+   mutate(
+    School_Id=factor(School_Id),
+    Year=factor(Year,levels=c("2015","2019")),
+    Gender=factor(Gender,levels=c("GIRL","BOY")),
+    Parent_Educ=factor(Parent_Educ,levels=c("less than ISCED2",
+                                          "ISCED2",
+                                          "ISCED3","ISCED4","ISCED6",
+                                          "ISCED7 or 8")),
+    Parent_Support=factor(Parent_Support,levels=c("VERY LOW","LOW","MEDIUM","HIGH",
+                                                  "VERY HIGH")),
+    Computer_Access=factor(Computer_Access,levels=c("YES","NO")),
+    Location = factor(Location,levels=c("Urban","Suburban",
+                                        "Large Town/City",
+                                        "Small Town/Village",
+                                        "Remote Rural")),
+    Book_Availability = factor(Book_Availability,
+                               levels=c("Few","Moderate","Good",
+                                        "Very Good","Excellent"),
+                                          ),
+    Teacher_Shortage =factor(Teacher_Shortage,levels=c("None","Low","Moderate",
+                                                       "High")),
+    Percent_Affluent=factor(Percent_Affluent,levels=c("Low","Moderate","High",
+                                                      "Excellent")),
+   
+    Percent_Disadvantaged=factor(Percent_Disadvantaged,
+                                 levels=c("Low", "Moderate","High","Severe"),
+                                                                 ))
+```
+ 
+ 
+```{r} 
+set.seed(123) 
+
+#Splitted rows into train and test data randomly and for each school_id year group 
+df_split <- df_Year %>%
+  group_by(School_Id, Year) %>%
+  mutate(split = sample(
+    c("train", "test"),
+    size = n(),
+    replace = TRUE,
+    prob = c(0.7, 0.3)
+  )) %>%
+  ungroup()
+
+#Created train and test datasets
+train_data <- df_split %>% filter(split == "train")
+test_data  <- df_split %>% filter(split == "test")
+```
+
+#lmm model of both years
+```{r}
+lmm_model31<-lmer(Scores ~ Gender+ Parent_Support+ Parent_Educ+ Computer_Access+
+                   Location + Book_Availability + Teacher_Shortage + Percent_Affluent+ Percent_Disadvantaged
+                  + Year+ (1 | School_Id:Year), 
+                  data = train_data)
+
+sjPlot::tab_model(lmm_model31,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE,
+                  show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+*Model Diagnostics*
+```{r}
+check_collinearity(lmm_model31) %>% plot()
+check_normality(lmm_model31) %>% plot()
+check_heteroscedasticity(lmm_model31) %>% plot()
+check_outliers(lmm_model31) %>% plot()
+```
+
+#linear mixed model(including Gender interactions) 
+```{r}
+lmm_modelg1<- lmer(
+  Scores ~ Gender * (Parent_Educ + Parent_Support + Computer_Access + Location +
+          Book_Availability + Teacher_Shortage +Percent_Affluent+ Percent_Disadvantaged + Year) +
+            (1 | School_Id:Year),
+  data = train_data)
+
+# Summary table
+sjPlot::tab_model(lmm_modelg1,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+*Model Diagnostics*
+```{r}
+check_collinearity(lmm_modelg1) %>% plot()
+check_normality(lmm_modelg1) %>% plot()
+check_heteroscedasticity(lmm_modelg1) %>% plot()
+check_outliers(lmm_modelg1) %>% plot()
+```
+#linear mixed model(including Year interactions)
+```{r}
+lmm_modely1<- lmer(
+  Scores ~ Year * (Gender+ Parent_Educ + Parent_Support + Computer_Access + Location +
+          Book_Availability + Teacher_Shortage + Percent_Affluent+ Percent_Disadvantaged) +
+            (1 | School_Id:Year),
+  data = train_data)
+
+# Summary table
+sjPlot::tab_model(lmm_modely1,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE, show.stat = TRUE,
+                  show.obs = FALSE)
+```
+*Model Diagnostics*
+```{r}
+check_collinearity(lmm_modely1) %>% plot()
+check_normality(lmm_modely1) %>% plot()
+check_heteroscedasticity(lmm_modely1) %>% plot()
+check_outliers(lmm_modely1) %>% plot()
+```
+
+#Comparison of lmm models
+```{r}
+anova(lmm_model31,lmm_modelg1)
+```
+
+```{r}
+anova(lmm_model31,lmm_modely1)
+```
+Not much significant effect due to the interaction terms included models and 
+neither it improves the fit and therefore the simpler model lmm_model31 can be 
+considered better.
+
+
+#Random forest regresssion model
+```{r}
+rf_ranger <- ranger(
+  formula = Scores ~ Gender + Parent_Educ + Parent_Support + Computer_Access +
+            Location + Book_Availability + Teacher_Shortage + Percent_Affluent+
+            Percent_Disadvantaged + Year+ School_Id,
+  data = train_data,
+  num.trees = 500,
+  importance= "impurity"
+)
+rf_ranger
+```
+
+#Comparison of both lmm(simpler) and random forest models
+```{r}
+pred_rf <- predict(rf_ranger, data = test_data)$predictions
+rmse_rf <- sqrt(mean((pred_rf - test_data$Scores)^2))
+rsq_rf <- 1 - sum((pred_rf - test_data$Scores)^2) / 
+           sum((test_data$Scores -mean(test_data$Scores))^2)
+```
+
+```{r}
+pred_lmm <- predict(lmm_model31, data = test_data)
+rmse_lmm <- sqrt(mean((pred_lmm - test_data$Scores)^2))
+rsq_lmm <- 1 - sum((pred_lmm - test_data$Scores)^2) / 
+               sum((test_data$Scores- mean(test_data$Scores))^2)
+```
+
+```{r}
+results <- tibble(
+  Model = c("LMM", "Random Forest"),
+  RMSE = c(rmse_lmm, rmse_rf),
+  R_squared = c(rsq_lmm, rsq_rf)
+)
+
+print(results)
+```
+
+From the table above, it clearly shows that random forest model generalizes 
+reasonably well compared to lmm model.(While it may fail to generalize to unseen 
+schools as this model only works because the same schools are in both training and test.)
+
+```{r}
+ranger::importance(rf_ranger)
+```
+here, Parent_Educ, Book_Availability, Parent_Support has more importance compared to other variables.
