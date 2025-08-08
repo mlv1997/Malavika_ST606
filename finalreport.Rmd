@@ -1,0 +1,1062 @@
+
+---
+output:
+      pdf_document:
+        latex_engine: xelatex
+        number_sections: true
+documentclass: report        
+geometry: "left=3.8cm,right=2.5cm,top=2.5cm,bottom=2.5cm"
+papersize: a4  
+linestretch: 1.5 
+header-includes:
+  \usepackage{amsmath}
+  \usepackage{pdflscape}
+  \usepackage{booktabs}
+  \usepackage{longtable}
+---
+
+
+\pagenumbering{roman}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.7\textwidth]{MULogo.png}
+\end{figure}
+
+
+\vspace{0.8cm}
+\begin{center}         
+\textbf{\huge MSc. Data Science and Analytics Thesis} \\
+\vspace{0.5cm}
+{\huge ANALYSIS OF TIMSS MATHEMATICS \vspace{0.5cm}\\ SCORES IN IRELAND} 
+\end{center} 
+
+
+\vspace{0.8cm}                
+\begin{center}            
+{\large \textbf{Author}: Malavika Velayudhan Nair} \\
+\vspace{0.5cm}
+{\large \textbf{Student Number}: 24251612}\\
+\vspace{0.5cm}
+{\large \textbf{Supervisor}: Prof. Catherine Hurley} 
+\end{center} 
+
+\vspace{0.7cm}
+\begin{center}
+\textit{A thesis submitted in fulfillment of the requirements for the degree of\\
+Masters in Data Science and Analytics \\ 2024-2025 \\
+to the Department of Mathematics \& Statistics \\ Maynooth University}
+\end{center}
+
+\vspace{0.7cm}
+\begin{center}
+\textbf{8th August 2025}
+\end{center}
+
+
+\newpage
+\vspace{0.5cm} 
+\begin{center}
+{\Large{\textbf{ACKNOWLEDGEMENT}}}
+\end{center}
+I would like to extend the utmost thanks to my supervisor Prof. Catherine Hurley who has been incredibly helpful during this project. Secondly, I want to thank the broader staff of the Department of Mathematics and Statistics who have made my study experience enjoyable as a MSc. Data Science and Analytics student at Maynooth University. Finally, I would like to thank my family and friends who have supported me throughout the year.
+
+
+\newpage
+\vspace{0.5cm}
+\begin{center}
+{\Large{\textbf{ABSTRACT}}}
+\end{center}
+This study presents an in-depth analysis of the Trends in International Mathematics and Science Study (TIMSS) mathematics scores for Ireland from the 2015 and 2019 assessment cycles. The primary objective was to identify key socio-economic, demographic, and educational factors influencing student performance, utilizing Linear Mixed Effects Models (LMM) and Random Forest regression(RF) models. 
+
+The analysis included variables such as gender, parental education and support, computer access, school location, book availability, teacher shortage, and economic backgrounds. Findings indicate significant impacts from parental education, book availability, and socio-economic factors with notable disparities observed between urban and rural settings.
+
+While random forest model identified similar key predictors and captured complex non-linear interactions, but showed signs of overfitting with a larger drop in accuracy on unseen data, the linear mixed effects model provided stable predictive performance between training and test sets and offered clear interpretability of relationships within the hierarchical data structure.
+
+Overall, the findings highlight the importance of targeted educational interventions that improve access to learning resources, address socio-economic disparities, and sustain parental engagement. The combined use of statistical and machine learning methods offers a comprehensive approach for understanding and addressing the factors influencing mathematics performance in Ireland.
+
+
+\newpage
+\tableofcontents
+
+\newpage
+\listoffigures
+
+\newpage
+\listoftables
+
+
+
+\newpage
+\setcounter{secnumdepth}{3}
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\section{Introduction}
+\pagenumbering{arabic}
+
+The Trends in International Mathematics and Science Study (TIMSS) is an international assessment aimed at evaluating the mathematical and scientific competencies of students around the world. This study is conducted every four years by the International Association for the Evaluation of Educational Achievement(IEA) to assess the mathematics and science scores of students at the fourth and eighth grade levels. TIMSS serves as a key tool in comparing student performance across participating countries (Mullis et al., 2019). It also provides a wide range of rich and standardized datasets for comparisons of student learning performances and outcomes. One of the many participated countries is Ireland and it has participated in order to monitor and improve its educational strategies.
+
+Ireland has been participating in TIMSS since its establishment and has been a part of the assessment that evaluates mathematical proficiency of students across wide range of topics. A National research centre is responsible for conducting this study for each participating countries. So for Ireland, this is carried out by the Educational Research Centre supported by The National Advisory Committee headed by the Department of Education. These national bodies ensure that the data collection and analysis reflect the unique educational context in Ireland. Ireland had participated in 2011(primary level only) and 1995, 2015, 2019 and 2023(at both primary and post-primary levels). TIMSS 2019 was the first iteration of the study to offer the assessment through a digital platform where half of the participating countries chose to administer the assessment digitally and the other half including Ireland used the paper-based version. However by TIMSS 2023, Ireland transitioned fully to the computer-based format, aligning with global trends aimed at modernizing the assessment and improving the accessibility of the study (Clerkin, Perkins, & Chubb, 2020).
+
+This project solely focuses on Ireland's performance in the TIMSS 2015 and 2019 Mathematics assessments comparing the scores of Irish students over these two cycles. The study examines the factors that may have contributed to any changes or trends in the performance of Irish students in mathematics and provides an analysis of how these factors influence the students’ scores. Various factors are considered in this study and they were chosen based on their established influence on student performance as identified in previous TIMSS reports and other educational studies. Understanding these changes is crucial for identifying the underlying reasons for shifts in performance and for developing targeted strategies to improve educational outcomes.
+
+Several socio-economic and school-level factors have been identified in previous TIMSS reports as key determinants of student performance. For example, factors such as parental education, parental support, gender, and school location have been shown to influence mathematics achievement (Clerkin et al., 2020; Gustafsson, Nilsen & Hansen, 2019). This study examines these factors and aims to determine how each has influenced student performance in Ireland over the 2015 and 2019 cycles.
+
+Additionally, other factors, such as access to resources like books and computers, and teacher shortages, are explored in this analysis. These variables were chosen based on their established influence on student performance, as identified in previous TIMSS reports and other educational studies (Mullis et al., 2019; Gustafsson et al., 2019).
+
+The study also aims to apply advanced statistical modeling techniques to assess the impact of these factors on student performance. The two primary methods used in this analysis are Linear Mixed Effects Models (LMM) and Random Forest Regression. LMMs are particularly useful for educational datasets due to their ability to account for the hierarchical structure of the data where students are nested within schools and for quantifying variation within and between groups. Random Forest Regression, a machine learning algorithm complements the LMM by capturing non-linear interactions and providing insights into the relative importance of different predictors (Cutler et al., 2007).
+
+\subsection{Objectives}
+
+Research Objectives:
+\begin{itemize}
+\item To analyze the TIMSS mathematics scores of Irish students in 2015 and 2019.
+\item To identify key factors that influence student performance and evaluate their relative impact.
+\item To develop predictive models for estimating student performance based on identified factors.
+\end{itemize}
+
+By addressing these research objectives, the study aims to contribute valuable insights for educators, policymakers, and other stakeholders interested in improving educational outcomes in Ireland and internationally. Understanding the dynamics that influence student achievement can inform targeted interventions and education reforms, ensuring that all students have the opportunity to succeed in mathematics, a critical subject for long-term academic and professional success.
+
+In summary, the analysis found that mathematics performance in Ireland is shaped by a combination of resource availability, socio-economic context, and demographic factors.Higher book availability, computer access, and lower levels of student disadvantage were consistently associated with better scores, while gender differences favoured boys slightly. The Linear Mixed Effects Model offered stable and interpretable results whereas the Random Forest model provided additional insights into complex interactions but showed reduced generalizability on new data. Together, these findings suggest that addressing resource gaps, supporting disadvantaged students and encouraging sustained parental involvement are key strategies for improving mathematics outcomes.
+
+The code files can be found in the following github repository: \href{https://github.com/mlv1997/Malavika\_ST606}{\textbf{Malavika\_ST606}}
+
+
+\newpage
+\section{Background}
+Major purpose of TIMSS is to provide background data that can help enhance teaching and learning. This study collects in-depth information on curriculum content and implementation, teaching methods and school resources. The assessment is grounded in detailed frameworks created in collaboration with the participating countries where it outlines the knowledge, skills and understanding that will be evaluated.
+
+In this analysis, only TIMSS 2015 and 2019 mathematics assessment is considered and the mathematics frameworks of these two year assessments share a common goal of assessing and improving mathematical proficiency worldwide. It assesses the achievements of students at the fourth and eighth grade levels typically corresponding to ages 9 to 10 and 13 to 14 respectively. The TIMSS 2015 mathematics framework was divided into two main domains such as Content Domain and Cognitive Domain. Content domain specifies the subject matter to be assessed and Cognitive Domain specifies the thinking process to be assessed. Content domain differs in assessing both fourth and eighth grades where the topics and its percentage considered are Number(50\%), Geometric Shapes and Measures(35\%) and Data Display(15\%) for fourth grade and Number(30\%), Algebra(30\%), Geometry(20\%) and Data and Chance(20\%) for eighth grade. Cognitive domain remains same for both the grades but differ in the emphasis. The domain is allocated into 40\% of the focus into Knowing, 40\% to Applying and 20\% to Reasoning at fourth grade and at eighth grade, there was a greater emphasis on Reasoning (25\%), highlighting the shift towards more complex problem-solving skills as students progressed through their education.()
+
+The TIMSS 2019 mathematics framework was built upon the already established structure of 2015 with several refinements and updates designed to align more closely with the evolving educational practices and advancements in technology. One of the most notable changes in TIMSS 2019 was the introduction of eTIMSS, the computer-based version of the assessment where it allowed for more interactive format especially in cognitive domains of Applying and Reasoning.For fourth grade, the content domains were Number (50\%), Measurement and Geometry (30\%) and Data (20\%). The Measurement and Geometry domain combined topics from Geometric Shapes and Measures and focused on both spatial reasoning and measurement skills.For Eighth Grade, the content domains remained similar with Number (30\%), Algebra (30\%), Geometry (20\%) and Data and Probability (20\%). As for cognitive domains in TIMSS 2019, it was adjusted slightly with Reasoning increasing to 25% in Eighth Grade, reflecting the need for higher-order thinking at this stage. However, the overall distribution between Knowing, Applying, and Reasoning remained similar to 2015.
+
+TIMSS has consistently served as a valuable resource for analyzing educational performance globally. In the context of Ireland, the study has played a pivotal role in identifying the factors that influence student performance. The Irish National Assessment of Mathematics and Science (NAMS), for instance, has used TIMSS data to examine the relationship between student performance and socio-economic factors, highlighting the importance of understanding how background influences learning outcomes (Educational Research Centre, 2018).
+
+Studies by Gustafsson et al. (2019) and Mullis et al. (2020) have reinforced the idea that key factors such as parental support, teacher quality, and access to learning resources are critical in shaping students’ mathematical achievements. These studies suggest that differences in socio-economic conditions significantly affect students’ ability to perform in mathematics and thus, targeted interventions are required to bridge these disparities.
+
+In Ireland, research has demonstrated the significant role of socio-economic factors in educational outcomes. For instance, students from affluent backgrounds consistently outperform their counterparts from disadvantaged backgrounds in mathematics (OECD, 2018). This underscores the need for a deeper understanding of how socio-economic status and related factors, such as parental education levels and access to resources, impact student learning.
+
+A wide range of studies has explored the impact of socio-economic factors on student performance. Research has shown that students from affluent backgrounds tend to perform better in mathematics compared to their peers from disadvantaged backgrounds. This phenomenon is widely acknowledged across different educational systems, with OECD (2018) highlighting how disparities in economic status can lead to significant differences in academic achievement. Additionally, parental education has been found to be a strong predictor of student performance. Parents with higher education levels are more likely to provide an enriched learning environment, offering their children greater opportunities for academic success (Sirin et al. 2005).
+
+Furthermore, access to learning resources such as books and computers has been identified as a critical determinant of student success. Students with access to books at home, educational materials, and technology perform better in assessments, as they can engage with content outside the classroom and reinforce their learning (Clerkin, Perkins, & Chubb, 2020). Studies by Gustafsson et al. (2019) also emphasize the role of teacher quality and school resources, with well-resourced schools and skilled teachers being able to provide a more supportive learning environment.
+
+
+This project builds upon previous research by applying statistical and machine learning methods to evaluate the impact of how socio-economic factors and other educational determinants interact within the context of Ireland’s education system. It expands the scope of traditional regression based education research by incorporating Linear Mixed Effects Models (LMM) to account for data clustering at the school level and Random Forest (RF) regression to capture non-linear interactions between predictors. In doing so, the study bridges a methodological gap in Irish TIMSS research, where machine learning models have been underutilized in policy-focused education analysis.  By analyzing the TIMSS data from 2015 and 2019, the study provides valuable insights into trends in Irish student performance and explores how socio-economic disparities may explain differences in performance between these two cycles and look into various machine learning model performances suitable for prediction accuracy and interpretability in educational context.
+
+
+
+\section{Data}
+The data for this study is sourced from the publicly available TIMSS datasets for 2015 and 2019, which include detailed information about the mathematical performance of students in participating countries, including Ireland (Mullis, Martin, Foy, Kelly, & Fishbein, 2020). The dataset is designed to capture a broad range of factors that could influence student performance in mathematics, including individual student characteristics, school-level variables, and socio-economic factors.
+
+The TIMSS 2015 and 2019 assessments used a two-stage stratified cluster sampling design (Martin, Mullis, & Hooper, 2016). In the first stage, a nationally representative sample of schools in Ireland was selected across various geographic and demographic strata. In the second stage, students were randomly selected from the target grade within each school. Across both years, 254 schools participated with 127 students both in 2015 and in 2019. 
+
+In total, the dataset includes 7,501 students, with the number of students per school ranging from 15 to 60 approximate. This sampling design ensures national representation while accounting for both school and student-level variability. The students are nested within each schools which adds a hierarchical structure to the data. This hierarchical structure is critical as it reflects the fact that students within the same school are likely to share certain characteristics, such as access to resources, teaching quality, and socio-economic background (Rutkowski, Gonzalez, Joncas, & von Davier, 2010). Therefore, the data requires specialized modeling techniques, such as Linear Mixed Effects Models (LMM), to account for the nested nature of the observations.
+
+The TIMSS data set includes a set of 13 variables of which 12 are categorical with different levels and rest one is a numerical variable which is the Math Score. The description of each key variables are given below and its corresponding levels are represented in the following manner:
+\begin{itemize}
+\item \texttt{stu\_id}: Unique identifier of each students.
+\item \texttt{math}: Numerical variable representing mathematics achievement scores of each student.
+\item \texttt{sex}: Gender of each student with two levels.They are GIRL, BOY
+\item \texttt{parent\_educ}: Different levels of education acquired by parents of each students.The levels are less than ISCED2, ISCED2, ISCED4, ISCED5, ISCED6, ISCED7 or 8.
+\item \texttt{parent\_support}: Different levels of support from the parents for each students. The levels are VERY LOW, LOW, MEDIUM, HIGH, VERY HIGH
+\item \texttt{computer}: Accessibility towards computer and its levels are YES, NO.
+\item \texttt{location}: Immediate area or geographical location of School of each student.The levels are 'URBAN, DENSELY POPULATED', 'URBAN-DENSELY POPULATED', 'SUBURBAN, ON FRINGE OF URBAN AREA', 'SUBURBAN-ON FRINGE OR OUTSKIRTS OF URBAN AREA', 'MEDIUM SIZE CITY OR LARGE TOWN', 'SMALL TOWN OR VILLAGE','REMOTE RURAL'.
+\item \texttt{book}: These are the number of books available at home of each student. The levels are 0-10 BOOKS, 11-25 BOOKS, 26-100 BOOKS, 101-200 BOOKS, MORE THAN 200.
+\item \texttt{shortage\_math\_teachers}: Shortage for teachers specialised in mathematics. The levels are NOT AT ALL, A LITTLE, SOME, A LOT.
+\item \texttt{school\_id}: Unique identifier of each schools.There are 254 schools of students participated.
+\item \texttt{percent\_affluent}: Percentage of students who come from affluent economic backgrounds.The levels are 0 TO 10\%, 11 TO 25\%, 26 TO 50\%, MORE THAN 50\%.
+\item \texttt{percent\_disadvantaged}: Percentage of students who come from disadvantaged economic backgrounds. The levels are 0 TO 10\%, 11 TO 25\%, 26 TO 50\%, MORE THAN 50\%.
+\item \texttt{year}: The years considered in the study are 2015, 2019.
+\end{itemize}
+
+\subsection{Preprocessing}
+The original dataset above was cleaned by renaming the categorical variables and appropriately encoding each of their levels for the modelling to be carried out with ease. Some of those variables whose levels were renamed respectively include:
+
+\begin{itemize}
+\item \texttt{Parent\_Support}: Levels were converted to LOW, MEDIUM, HIGH, VERY HIGH.
+\item \texttt{Location}: Immediate area of School location of each student.The levels are 
+Urban, Urban\_1, Suburban, Suburban\_1, Large Town/City, Small Town/Village, Remote Rural. Here,
+the levels Urban and Urban\_1 are named particularly for the location data of 2015 and 2019 respectively. Both represents the same but different names given to the level. Similarly Suburban and Suburban\_1 named as above.
+\item \texttt{Book\_Availability}: These are the amount of books at home of each student. The levels are Few, Moderate, Good, Very Good, Excellent.
+\item \texttt{Teacher\_Shortage}: Shortage for teachers specialised in mathematics. The levels are None, Low, Moderate, High.
+\item \texttt{Percent\_Affluent}: Percentage of students from affluent economic backgrounds.The levels are Low, Moderate, High, Excellent.
+\item \texttt{Percent\_Disadvantaged}: Percentage of students from disadvantaged economic backgrounds. The levels are Low, Moderate, High, Severe.
+\end{itemize}
+
+**Missing Values**
+
+The dataset was checked for missing values and though values for every levels of categorical variables are not present, the models don't take that into consideration and it is seen there is no presence of missing values(NA) in the dataset. In order to confirm this, packages such as naniar() were used to investigate NA values. The analysis was proceeded without the need for imputation or exclusion of any observations based on missing data as majority of the variables are categorical. Hence, the resulted plot is given below and it  confirms the absence of NA values. Therefore, values absent in the data is carefully handled by the two models itself.
+
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\textwidth]{Missingvalues.png}
+\caption[Missing Values Plot]{Here, missing values is examined for each categorical variables and the percentage near to each variable show the absence of NA values for those variables.}
+\end{figure}
+
+\subsection{Exploratory Data Analysis(EDA)}
+Before fitting the models, an inital exploratory analysis was conducted inorder to understand the distribution of scores and key patterns across the categorical variables. In the boxplots, most of the wider boxes represents a larger sample size and narrower boxes represents a smaller group where the results is interpreted with caution.
+
+\subsubsection{Distribution of Scores by Year}
+
+Firstly, distribution of scores based on year was seen and the violin plot shows the distribution of scores for 2015 and 2019. The 2015 plot (brown) is slightly wider below the average, suggesting more students scored just under the mean. In contrast, the 2019 plot (steel blue) is more symmetrical, showing a balanced spread around the mean. Both years have similar median scores, indicating no major change in overall performance. In case of outliers, students with very high or low scores are also present in both years at similar levels.
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\textwidth]{Distofscores.png}
+\caption[Plot of Distribution of Scores by Year.]{The width at each point reflects the density of students scoring at that level, with the embedded boxplots indicating the median and interquartile range.}
+\end{figure}
+
+
+\subsubsection{Computer Access vs Scores based on Year and Gender}
+
+
+In Figure 3, the width of each box is proportional to the number of students in each group of computer access. Wider boxes indicate larger groups while narrow boxes shows small groups, where medians and quartiles are less stable and should be interpreted cautiously.
+
+Across both years, students with access generally show higher medians and upper quartiles than the corresponding students without access, which shows the magnitude of this gap is not uniform. Some  combinations of the gender-year-access shows clear separation between ‘YES’ and ‘NO’, while others display overlapping interquartile ranges, indicating substantial within‑group variability.
+
+The spread also differs where ‘NO’ categories exhibit heavier lower tails and more  outliers, while ‘YES’ categories have wider IQRs, reflecting a broader range of performance even among students with access. Because the ‘NO’ category in year 2019 are visibly narrower especially in some gender–year-access combination, those should be read with extra caution where it can be likely due to size differences.
+
+Overall, Figure 3 indicates a consistent advantage for students with computer access, but also highlights heterogeneity across years and genders and group differences matter when interpreting the results.
+
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\textwidth]{Computeraccess.png}
+\caption[Computer Access Plot based on Year and Gender]{Box widths are constant across categories, with medians, interquartile ranges, and outliers displayed, allowing comparison of performance patterns between boys and girls in 2015 and 2019.}
+\end{figure}
+
+\newpage
+\subsubsection{Distribution of Scores by Location and Gender}
+
+Figure 4  provides a clearer picture of how student performance varies by both gender and school location across the 2015 and 2019 TIMSS cycles. Key observations is that in both 2015 and 2019, Urban and Large Town/City students generally have higher median scores than those from smaller towns or remote areas. Girls in these locations often match or slightly outperform boys, while in more rural areas, score spreads are wider and lower outliers are more common for both genders. Remote Rural and Small Town/Village groups in particular show more variation in performance, with some very low scores pulling down the overall distribution.
+
+Between the two years, the overall location based pattern remains similar, but 2019 shows slightly more balanced distributions in certain categories for e.g., Suburban, Urban\_1 and fewer extreme outliers in some groups. However, the narrow widths of some rural and suburban categories indicate smaller student counts, meaning differences there should be interpreted cautiously.
+
+These plots highlight that location remains an important factor in performance, with urban-based students generally achieving higher results outperforming their rural conterparts, and although some progress appears to have been made by 2019, geographic disparities in performance persist highlighting the need for targeted educational support in remote and disadvantaged areas.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{Location2015.png}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{Location2019.png}
+\caption[Plot of Scores vs Location and Gender over 2015 and 2019]{ Each location represented by specific colour where the levels such as Urban, Urban\_1 are same but with different names gives the student performance from different school location over the two years 2015 and 2019.}
+\end{figure}
+
+\newpage
+\subsubsection{Combined Plot of 10 Best performing schools by Gender Dominance}
+
+Figure 5 presents the 10 best performing schools based on average TIMSS math scores with a breakdown by gender and school type (Boys Only, Girls Only, or Mixed). Here, most of the top-performing schools are single-gender schools particularly Boys Only, followed by Girls Only. Boys in Boys Only schools (e.g., 5078, 5083, 65) achieve high median scores but also show wider spreads, indicating more variation in outcomes. Girls in Girls Only schools (e.g., 5109, 5035) have high medians with relatively compact interquartile ranges, reflecting more consistent performance. Mixed schools (e.g., 5069, 5121, 110) show moderate to high scores for both genders but also more overlap and variability.
+
+However, the strong performance in some Mixed schools suggests that gender composition alone does not determine performance and other contextual or instructional factors may be at play.This analysis highlights the diversity in school types among top performers, with a slight skew toward boys only schools achieving higher scores on average in this data set.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Bestschools.png}
+\caption[Plot of Best performed 10 schools by gender dominance]{Pink represented by girl and steel blue represented by boys where medians, interquartile ranges, and outliers highlight performance patterns, with several top positions occupied by single-gender schools, particularly Boys Only institutions.}
+\end{figure}
+
+\subsubsection{Combined Plot of 10 Worst performing schools by Gender Dominance}
+
+Figure 6 presents the 10 worst performing schools based on average TIMSS math scores with a breakdown by gender and school type (all categorized as Mixed).The width of the box is important here as some boys in School 14 or girls in School 27 have noticeably narrow boxes, signalling smaller sample sizes. All the schools in this group are Mixed, meaning they include both boys and girls. The absence of single-gender schools among the lowest performers suggests that being co-educational does not inherently lead to lower outcomes, but may point to other challenges.
+
+Several schools such as 139, 93 and 27 exhibit very low median scores and a wide interquartile range, indicating both low performance and high variability. In some cases, such as School 73 and School 5125, girls outperform boys, while in others like School 139, boys score slightly higher, showing no consistent gender pattern in under performance. Outliers on the lower end especially below 350 further highlight deep-seated academic struggles within these schools.
+
+There is no consistent gender pattern in performance such as in some schools for e.g., 73 and 5125 girls score higher, while in others boys have slightly better results. The varying widths of the boxes reinforce that some patterns are based on very small groups, meaning those results should be interpreted cautiously.
+
+The fact that all 10 of the lowest performers are mixed schools could suggest systemic issues such as resource limitations, student socioeconomic background, teacher shortages, or limited academic support rather than gender composition alone. Also, the presence of wide score distributions in many of these schools indicates inconsistent educational outcomes, which may reflect disparities in teaching quality, student engagement or external learning support.
+
+Unlike the best performing schools where gender segregated environments sometimes showed more consistent results, these schools reveal that performance challenges are more likely rooted in broader educational inequalities.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Worstschools.png}
+\caption[Plot of Worst performed 10 schools by gender dominance.]{Medians, interquartile ranges, and outliers, highlighting generally low performance levels and wide variability, with no consistent gender advantage across schools.}
+\end{figure}
+
+\subsubsection{Combined Plot of Gender-wise score distribution of categorical variables}
+
+In Figure 7, there is a clearly a downward trend in scores for both girls and boys as the parental education level increases. Students whose parents have tertiary education i.e (ISCED5–ISCED8) consistently scored lower than those whose parents have lower educational levels such as 'less than ISCED2', 'ISCED2'. While both genders benefit from higher parental education, girls tend to have slightly more compressed score distributions, suggesting more consistent performance. Boys show slightly wider interquartile ranges, indicating more variability. Students whose parents fall into the ‘less than ISCED2’ group show noticeably higher median scores, reinforcing influence of some other factors combined with parental education on student achievement.
+
+A clear increase in median scores is observed as parental support moves from ‘Very Low’ to ‘Very High’ for both genders. Girls tend to edge out boys in median scores when parental support is ‘High’ or ‘Very High’, potentially indicating a greater responsiveness to supportive home environments. Both genders score significantly lower under ‘Very Low’ parental support, highlighting the importance of familial involvement in academic success.
+
+In this dataset, parental support particularly avoiding very low support appears to be a more consistent factor for higher performance than parental education. The inverse education trend suggests that student achievement here is influenced by a complex mix of factors beyond just parental qualifications, such as resource access, cultural attitudes toward learning, or school quality. 
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Educsupp.png}
+\caption[Gender-wise scores distribution with Parent Education and Parent support.]{Shows that higher parental education and greater parental support are generally associated with higher median scores for both boys and girls, though performance variability differs across categories.}
+\end{figure}
+
+
+In Figure 8, there is a consistent increase in median scores for both boys and girls as book availability improves from 'Few' to 'Excellent'. This suggests that access to more books at home or in school is strongly associated with higher student performance. However, the gap between ‘Very Good’ and ‘Excellent’ is small, suggesting diminishing returns once a certain level of resources is reached.
+
+Across all categories, boys show slightly higher median scores than girls. However, the differences are not large and the interquartile ranges for both genders are comparable. Students in the 'Few' and 'Moderate' categories show wider score distributions, especially among girls, implying greater variability in performance when learning resources are limited. Ensuring widespread access to books could be a cost-effective intervention to improve learning outcomes for both genders in TIMSS.
+
+Unlike book availability, teacher shortage does not show a strong linear relationship with score improvements or declines.Boys and girls maintain similar patterns across all shortage levels, with slight male advantage in medians in some categories. Students in the 'None' and 'Low' shortage categories do not significantly outperform those in "Moderate" or 'High' categories, suggesting other school-level factors such as school management strategies, teacher allocation policies, or student resilience may be moderating this effect. 
+
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Bookteach.png}
+\caption[Gender-wise scores distribution with Book availability and Teacher Shortage.]{The plots show that greater book availability is generally linked to higher median scores for both boys and girls, while teacher shortage displays a less consistent relationship with performance.}
+\end{figure}
+
+\newpage
+In Figure 9, the relationship between the proportion of students from affluent backgrounds and scores is not strictly linear in this dataset. Median scores are highest in the ‘Moderate’ and ‘High’ categories, while the ‘Low’ category shows both lower medians and more variability, with several low outliers. The ‘Excellent’ category has medians similar to ‘High’, suggesting that beyond a certain proportion of affluent students, additional increases may not yield large performance gains. Gender differences are modest, with boys having slightly higher medians in most categories, though the overlap in interquartile ranges indicates similar distributions.
+
+There is a clear decline in scores as the proportion of disadvantaged students increases. The 'Severe' disadvantage category is associated with the lowest median scores, for both genders. Similar to the affluence trend, boys slightly outperform girls within each disadvantage category, though both genders are similarly impacted by high disadvantage levels.
+
+The 'Severe' category also displays high variability, reinforcing the idea that socio-economic challenges lead to inconsistent academic performance. Disadvantage has a strong negative effect on scores, highlighting the urgent need for policy and resource interventions in such schools.
+
+Both affluence and disadvantage are strong socio-economic predictors of performance. Higher affluence correlates with better scores, while greater disadvantage correlates with lower performance. The gender performance gap is narrow but persistent, slightly favoring boys.
+
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Affdisadv.png}
+\caption[Gender-wise scores distribution with Percent Affluent and Percent Disadvantaged.]{Higher percentages of affluent students are associated with higher median scores, while greater proportions of disadvantaged students correspond to lower median scores for both genders, with boys showing a slight performance edge.}
+\end{figure}
+
+\newpage
+\section{Methodology}
+
+This section outlines the methodological approaches used to analyze the TIMSS mathematics scores of Irish students for the assessment years 2015 and 2019. Given the hierarchical structure of educational data, characterized by students nested within schools, advanced statistical and machine learning methods suitable for handling such complexities were employed. The methods utilized included Linear Mixed Effects Models (LMM) and Random Forest regression.
+
+\subsection{Linear Mixed Effects Models (LMM)}
+
+Linear Mixed Effects models extend traditional linear regression frameworks to handle hierarchical or clustered data, commonly encountered in educational research . Such models effectively account for variability both within and between clusters by incorporating fixed effects, capturing the overall effects of predictors, and random effects, capturing variability among clusters (Rutkowski, Gonzalez, Joncas, & von Davier, 2010).
+
+In the current analysis, an LMM was applied to a combined dataset from TIMSS 2015 and 2019 with random intercepts modeled for each unique school-year combination (School_ID:Year). The inclusion of random intercepts allows the model to account for variability in school-level performance and potential differences occurring between assessment years (Rutkowski, Gonzalez, Joncas, & von Davier, 2010).
+
+**Mathematical Formulation of the LMM**
+
+The combined LMM model used in this study can be mathematically expressed as :
+
+\[
+y_{ijt} = \beta_0 + \sum_{k=1}^{p}\beta_k X_{ijkt} + u_{jt} + \epsilon_{ijt}
+\]
+
+Where:
+
+ $y_{ijt}$ represents the mathematics achievement score of student $i$ in school $j$ during year $t$ .
+
+ $\beta_0$ denotes the overall fixed-effect intercept.
+
+ $\beta_k$ are fixed-effect coefficients for predictor variables .
+
+ $u_{jt}$ represent the random intercepts for school  at year  which follow a normal distribution. i.e 
+ $u_{jt} \sim N(0,{\sigma_u}^2)$.
+
+ $\epsilon_{ijt}$ is the residual error term, also normally distributed.i.e 
+ $\epsilon_{ijt} \sim N(0,{\sigma_\epsilon}^2)$.
+
+**Assumptions and Diagnostics for LMM**
+
+The assumptions underpinning Linear Mixed Effects Models include linearity of relationships, normality of residuals, homoscedasticity, and independence of residuals within clusters. To validate these assumptions, several diagnostic tools were employed (Bates, Mächler, Bolker, & Walker, 2015)
+\begin{itemize}
+\item Residual vs. fitted value plots to evaluate linearity and homoscedasticity.
+
+\item Normal Q-Q plots for assessing normality of residuals.
+
+\item Cook’s distance plots to identify influential observations.
+\end{itemize}
+
+These diagnostics ensure robust and reliable model interpretation and results (Bates et al., 2015).The model diagnostics were performed using performance package.
+
+**ANOVA Test Comparison**
+
+To assess whether including interaction effects meaningfully improves the model, ANOVA test were performed. This approach compares a baseline model against an extended model containing additional interaction terms, testing whether the added complexity leads to a statistically significant improvement in model fit (Kuznetsova, Brockhoff, & Christensen, 2017). In the context of this study, two sets of interactions were examined such as Gender * Parent Support to explore whether parental involvement influenced boys and girls differently and Year * Computer Access to examine whether the impact of computer availability changed between 2015 and 2019.
+
+
+**Random and Marginal Effects Plots**
+
+Random effects plots were used to visualise school year level variation in the Linear Mixed Effects Model (LMM). These plots display how much each school-year combination deviates from the overall intercept after controlling for fixed effects, offering insight into unobserved institutional influences such as teaching quality, leadership style or local community factors (Rutkowski, Gonzalez, Joncas, & von Davier, 2010). Marginal effects plots, on the other hand, depict the predicted outcome across different levels of a predictor variable while holding others constant (Fox & Weisberg, 2018). This allows a more intuitive understanding of each variable’s influence on mathematics scores.
+
+\newpage
+\subsection{Random Forest Regression (RF)}
+
+Random Forest regression is an ensemble machine learning algorithm that constructs multiple decision trees and aggregates their outcomes to enhance predictive accuracy and control overfitting (Breiman, 2001). This non-parametric technique effectively captures complex and non-linear relationships between the predictors and the outcome variable, providing complementary insights alongside linear models.
+
+**Mathematical Formulation of Random Forest**
+
+Random Forest prediction aggregates predictions from multiple decision trees and is mathematically described as (Breiman, 2001):
+
+\[
+\hat{f}(X) = \frac{1}{T} \sum_{t=1}^{T} f_t(X)
+\]
+
+
+Where:
+
+$\hat{f}(X)$ is the predicted mathematics score given the predictor set .
+
+$ f_\text{t} (X)$ represents the prediction from the  tree.
+
+$T$ is the number of trees in the ensemble.
+
+Each tree within the Random Forest is grown using a bootstrapped sample of the data and a subset of predictors, employing recursive partitioning that aims to minimize the residual sum of squares (RSS) (Breiman, 2001):
+
+
+\[
+RSS = \sum_{i \in L}(y_i - \bar{y}_L)^2 + \sum_{i \in R}(y_i - \bar{y}_R)^2
+\]
+
+Where:
+ $L$ and $R$  represent the left and right child nodes respectively.
+
+ $y_i$ denote the observed mathematics scores, with $\bar{y}_L$ and $\bar{y}_R$ 
+ representing means within partitions.
+ 
+**Variable Importance Plot**
+
+In the Random Forest (RF) model, a Variable Importance Plot was generated using the impurity-based measure, which ranks predictors by their contribution to reducing prediction error across all trees (Breiman, 2001; Liaw & Wiener, 2002). This method is especially useful in educational datasets with numerous correlated predictors, as it can reveal influential factors even when their effects are non-linear or involve complex interactions (Cutler et al., 2007).
+
+
+\newpage
+\section{Analysis and Results}
+\subsection{Linear Mixed Effects Models}
+To assess the factors influencing student performance in mathematics, firstly a Linear Mixed Effects Model (LMMs) were fitted using the lme4 (Bates et al. 2015) package in R. ID variable was ignored as unique identifier of each student wasn't considered in the modelling procedures. Hence, the first model considered is with both the years combined. 
+
+```{r,echo=FALSE, include=FALSE, message=FALSE, warning=FALSE}
+#loading packages
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+library(sjPlot)
+library(rsample)
+library(ranger)
+library(performance)
+load("irltim.Rdata")#loaded the Ireland math data
+view(irltim)
+
+cleaned_data <- irltim %>%
+  select(stu_id, math, sex,parent_educ, parent_support, school_id, percent_affluent, percent_disadvantaged, computer, book, shortage_math_teachers, location, year) %>%
+  rename(
+    ID = stu_id,
+    Scores = math,
+    Gender = sex,
+    Parent_Educ=parent_educ,
+    Parent_Support = parent_support,
+    Computer_Access = computer,
+    Book_Availability = book,
+    Teacher_Shortage = shortage_math_teachers,
+    School_Id = school_id,
+    Percent_Affluent=percent_affluent,
+    Percent_Disadvantaged = percent_disadvantaged,
+    Location = location,
+    Year = year
+ )
+
+
+cleaned_data <- cleaned_data %>%
+  mutate(Book_Availability = case_when(
+    Book_Availability %in% c("0-10 BOOKS", "NONE OR VERY FEW (0-10 BOOKS)") ~ "Few",
+    Book_Availability %in% c("11-25 BOOKS", "ENOUGH TO FILL ONE SHELF (11-25 BOOKS)") ~ "Moderate",
+    Book_Availability %in% c("26-100 BOOKS", "ENOUGH TO FILL ONE BOOKCASE (26-100 BOOKS)") ~ "Good",
+    Book_Availability %in% c("101-200 BOOKS", "ENOUGH TO FILL TWO BOOKCASES (101-200 BOOKS)") ~ "Very Good",
+    Book_Availability %in% c("MORE THAN 200", "ENOUGH TO FILL THREE OR MORE BOOKCASES (MORE THAN 200)") ~ "Excellent",
+    TRUE ~ Book_Availability
+  ))                                      
+
+cleaned_data$Percent_Disadvantaged<-dplyr::recode(cleaned_data$Percent_Disadvantaged,
+                                         "0 TO 10%" = "Low",
+                                        "11 TO 25%" = "Moderate",
+                                        "26 TO 50%" = "High",
+                                        "MORE THAN 50%" = "Severe"
+)
+
+cleaned_data$Teacher_Shortage<-dplyr::recode(cleaned_data$Teacher_Shortage,
+  "NOT AT ALL" = "None",
+  "A LITTLE"   = "Low",
+  "SOME"       = "Moderate",
+  "A LOT"       ="High"
+)
+                                      
+
+cleaned_data$Location <- dplyr::recode(cleaned_data$Location,
+  "URBAN, DENSELY POPULATED" = "Urban",
+  "URBAN-DENSELY POPULATED" = "Urban_1",
+  "SUBURBAN, ON FRINGE OF URBAN AREA" = "Suburban",
+  "SUBURBAN-ON FRINGE OR OUTSKIRTS OF URBAN AREA" = "Suburban_1",
+  "MEDIUM SIZE CITY OR LARGE TOWN" = "Large Town/City",
+  "SMALL TOWN OR VILLAGE" = "Small Town/Village",
+  "REMOTE RURAL" = "Remote Rural"
+  
+)
+cleaned_data$Percent_Affluent<- dplyr::recode(cleaned_data$Percent_Affluent,
+                                        "0 TO 10%" = "Low",
+                                        "11 TO 25%" = "Moderate",
+                                        "26 TO 50%" = "High",
+                                        "MORE THAN 50%" = "Excellent"
+)
+```
+
+```{r,echo=FALSE, include=FALSE, message=FALSE, warning=FALSE}
+ timss_df<- cleaned_data%>%
+   mutate(
+    School_Year_Id = paste(School_Id, Year,sep="_"), 
+    School_Year_Id=factor(School_Year_Id),
+    Year=relevel(factor(as.character(Year,
+                levels=c("2015","2019"))),
+                ref="2015"),
+    Gender=relevel(factor(as.character(Gender,
+              levels=c("GIRL","BOY"))),
+                ref="GIRL"),
+    Parent_Educ=relevel(factor(as.character(Parent_Educ,
+           levels=c("less than ISCED2","ISCED2","ISCED3","ISCED4",
+               "ISCED5","ISCED6","ISCED7 or 8"))),
+                ref="less than ISCED2"),
+    Parent_Support=relevel(factor(as.character(Parent_Support,
+               levels=c("VERY LOW","LOW","MEDIUM","HIGH","VERY HIGH"))),
+                ref="VERY LOW"),
+    Computer_Access=relevel(factor(as.character(Computer_Access,
+                levels=c("NO","YES"))),
+                ref="NO"),
+    Location = relevel(factor(as.character(Location,
+        levels=c("Remote Rural","Small Town/Village","Large Town/City","Suburban_1", "Suburban","Urban_1","Urban"))),
+                  ref="Remote Rural"),
+    Book_Availability = relevel(factor(as.character(Book_Availability,
+      levels=c("Few","Moderate","Good","Very Good","Excellent"))),
+                  ref="Few"),
+    Teacher_Shortage =relevel(factor(as.character(Teacher_Shortage,                            levels=c("High","Moderate","Low","None"))),
+                  ref="High"),
+    Percent_Affluent=relevel(factor(as.character(Percent_Affluent,
+            levels=c("Low","Moderate","High", "Excellent"))),
+                  ref="Low"),
+    Percent_Disadvantaged=relevel(factor(as.character(Percent_Disadvantaged,
+          levels=c("Severe","High","Moderate","Low"))),
+                 ref="Severe")
+    )
+```
+
+
+```{r,echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+
+set.seed(123)
+df_split <-timss_df %>%
+  group_by(School_Year_Id) %>%
+  mutate(split = sample(
+    c("train", "test"),
+    size = n(),
+    replace = TRUE,
+    prob = c(0.7, 0.3)
+  )) %>%
+  ungroup()
+
+train_df <- df_split %>% filter(split == "train")
+test_df  <- df_split %>% filter(split == "test")
+```
+Here, firstly, the dataset was splitted into train and test sets in such a way that the School ID's of both years 2015 and 2019 were included in both the train and test sets. Here, School_Year_Id was assigned as the variable grouped with School_Id and Year and this was used in the models. Then the model was fitted and the results obtained are as follows:
+
+```{r,echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+
+lmm_model<-lmer(Scores ~ Gender+ Parent_Support+ Parent_Educ+ Computer_Access+
+           Location + Book_Availability + Teacher_Shortage + Percent_Affluent+ 
+                    Percent_Disadvantaged + Year+
+                    (1 | School_Year_Id), 
+                  data = train_df)
+
+sjPlot::tab_model(lmm_model,
+                  show.ci = FALSE, show.aic = TRUE,
+                  show.se = TRUE,
+                  show.stat = TRUE,
+                  show.obs = FALSE)
+```
+
+
+\newpage
+\begin{table}[htbp]
+\centering
+\caption{Linear Mixed Model Results}
+\begin{tabular}{lllll}
+\toprule
+\textbf{Predictors} & \textbf{Estimates} & \textbf{std. Error} & \textbf{Statistic} & \textbf{p} \\
+\midrule
+(Intercept) & 359.56 & 34.61 & 10.39 & \textbf{<0.001} \\
+Gender [BOY] & 10.74 & 1.81 & 5.93 & \textbf{<0.001} \\
+Parent\_Support [HIGH] & 107.78 & 32.65 & 3.30 & \textbf{0.001} \\
+Parent\_Support [LOW] & 104.15 & 33.19 & 3.14 & \textbf{0.002} \\
+Parent\_Support [MEDIUM] & 106.90 & 32.57 & 3.28 & \textbf{0.001} \\
+Parent\_Support [VERY HIGH] & 109.60 & 32.73 & 3.35 & \textbf{0.001} \\
+Parent\_Educ [ISCED2] & 5.49 & 2.18 & 2.51 & \textbf{0.012} \\
+Parent\_Educ [ISCED3] & -12.48 & 2.47 & -5.04 & \textbf{<0.001} \\
+Parent\_Educ [ISCED4] & -20.50 & 4.39 & -4.67 & \textbf{<0.001} \\
+Parent\_Educ [ISCED5] & -22.79 & 5.50 & -4.15 & \textbf{<0.001} \\
+Parent\_Educ [ISCED6] & -19.88 & 2.08 & -9.56 & \textbf{<0.001} \\
+Computer\_Access [YES] & 17.67 & 2.39 & 7.41 & \textbf{<0.001} \\
+Location [Large Town/City] & -16.67 & 10.37 & -1.61 & 0.108 \\
+Location [Small Town/Village] & -15.58 & 10.30 & -1.51 & 0.130 \\
+Location [Suburban] & -24.97 & 11.14 & -2.24 & \textbf{0.025} \\
+Location [Suburban\_1] & -11.51 & 10.91 & -1.06 & 0.291 \\
+Location [Urban] & -22.67 & 11.78 & -1.92 & 0.054 \\
+Location [Urban\_1] & -15.95 & 11.71 & -1.36 & 0.173 \\
+Book\_Availability [Excellent] & 71.06 & 3.00 & 23.69 & \textbf{<0.001} \\
+Book\_Availability [Good] & 45.63 & 2.55 & 17.88 & \textbf{<0.001} \\
+Book\_Availability [Moderate] & 25.65 & 2.63 & 9.75 & \textbf{<0.001} \\
+Book\_Availability [Very Good] & 58.91 & 2.85 & 20.70 & \textbf{<0.001} \\
+Teacher\_Shortage [Low] & 1.23 & 6.73 & 0.18 & 0.855 \\
+Teacher\_Shortage [Moderate] & -11.21 & 8.04 & -1.39 & 0.163 \\
+Teacher\_Shortage [None] & 3.68 & 6.57 & 0.56 & 0.575 \\
+Percent\_Affluent [Excellent] & 8.85 & 4.44 & 1.99 & \textbf{0.046} \\
+Percent\_Affluent [High] & 8.55 & 3.84 & 2.23 & \textbf{0.026} \\
+Percent\_Affluent [Moderate] & -0.29 & 3.66 & -0.08 & 0.936 \\
+Percent\_Disadvantaged [High] & 15.99 & 4.73 & 3.38 & \textbf{0.001} \\
+Percent\_Disadvantaged [Low] & 31.25 & 4.90 & 6.38 & \textbf{<0.001} \\
+Percent\_Disadvantaged [Moderate] & 25.24 & 4.40 & 5.74 & \textbf{<0.001} \\
+Year [2019] & -7.52 & 3.43 & -2.19 & \textbf{0.028} \\
+\midrule
+\multicolumn{5}{l}{\textbf{Random Effects}} \\
+$\sigma^2$ & 2951.75 & & & \\
+$\tau_{00 \text{ School\_Year\_Id}}$ & 283.67 & & & \\
+ICC & 0.09 & & & \\
+$N_{\text{School\_Year\_Id}}$ & 254 & & & \\
+\midrule
+Marginal $R^2$ / Conditional $R^2$ & 0.270 / 0.334 & & & \\
+AIC & 57225.424 & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+From Table 1, the fixed effects are socio-demographic and contextual predictors such as Gender, Parent Education, Parent Support, Computer Access, Book Availability, Location, Teacher Shortage, Percent Affluent, Percent Disadvantaged, and Year.
+School_Year_Id level i.e., schools nested within years is taken to account for variability across schools and between years.
+
+The intercept (359.56) represents the baseline math score for the reference category across all categorical variables.
+
+Reference group is formed by first level of each ordered categorical variables. For eg: boys, very high parent support, highest parent education, no computer access, etc are interpreted as the reference category and other predictors are estimated relative to this reference.
+
+**Fixed Effects**
+
+Girls scored significantly lower than boys on average by about 10.74 points indicating a gender gap in performance favoring boys in this dataset. Every levels of parent support was significant, associated with a substantial increase of 107.78 points. There is a strong negative  significant effect as parent education levels decrease. Students whose parents had higher education levels scored significantly worse such as ISCED3: −12.48, ISCED4: −20.50, ISCED5: −22.79, ISCED6: −19.88. Students with computer access scored significantly higher by 17.67 points, suggesting access to digital learning resources is beneficial. 
+
+As for Book availability, showed a positive linear effect that implied more books at home is associated with higher scores.More access to books was associated with a  a significant increase of 71.06 points.'Good' and 'Moderate' categories were significantly lower than 'Excellent'. This highlights the importance of learning resources at home. None of the levels of Teacher shortage similar to Location had a significant impact on the student performance which is surprising. It might also indicate there can be other aspects involved which is unknown.
+
+Another important factor was the Percent Disadvantaged which was statistically significant on scores that negatively impacted. While students who came from higher economic backgrounds substantially scored a performance of an average increase of 31.25 points. This also indicates students from more disadvantaged economic backgrounds tend to perform worse. Last factor considered was year where Students in 2019 scored on average 7.52 points lower than in 2015. This may suggest a potential decline in performance over time or other cohort effects.
+
+**Random Effects**
+
+The Intraclass Correlation Coefficient (ICC) is 0.09, suggesting that 9% of the variance in student scores is attributable to differences between School-Year clusters. This justifies the use of a random intercept model for School_Year_Id.
+
+A proportion of variance explained by fixed effects alone is 0.270 and Variance explained by both fixed and random effects is 0.334. This means predictors explain about 27\% of the variability in student scores and incorporating school-level differences increases this to 33.4\% indicating the importance of modeling school-level effects.
+
+Hence, this model provides valuable insights into factors affecting math performance in Ireland’s TIMSS data identifying gender disparities,
+crucial role of parental education and home resources, negative effect of disadvantaged economic backgrounds. Moreover, this model also confirms that school-year level heterogeneity is non-trivial and must be accounted for in educational performance analysis.
+
+\subsubsection{Model Diagnostics}
+
+This section looks into whether the above model satisfies the assumptions of a linear mixed models such as multicollinearity, normality, homoscadesticity and presence of infuential observations.
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Viflmm.png}
+\caption[LMM Model- Multicollinearity.]{Variance Inflation Factor (VIF) values for predictors in the LMM model, indicating low multicollinearity across all variables (VIF < 5)}
+\end{figure}
+
+Figure 10 assesses multicollinearity among predictors wher all VIF values are well below 5, with most near 1–2. No predictor shows concerning multicollinearity, especially not key variables like Gender, Computer_Access, or Location. Therefore, collinearity is low, so model estimates are reliable and not distorted by overlapping predictors.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Normalitylmm.png}
+\caption[LMM Model- Normality Q-Q plot of residuals.]{Most points follow the reference line, indicating residuals are approximately normally distributed, with slight deviations at the extremes}
+\end{figure}
+
+Figure 11 checks if residuals are approximately normally distributed which is a key assumption of LMM. Residuals align reasonably along the straight reference line, especially in the center. Some minor deviations at the tails are visible but this is common with large datasets like TIMSS. Hence, normality of residuals is largely acceptable supporting the validity of statistical inferences from the model.
+
+\newpage
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Variancelmm.png}
+\caption[LMM Model- Constant Variance.]{ Assessing homoscedasticity in the LMM model. The residual spread appears consistent across fitted values, supporting the constant variance assumption. }
+\end{figure}
+
+Figure 12 tests whether variance of residuals is constant across fitted values where the residual spread appears fairly consistent with a mostly flat trend line. There's some minor widening at mid-score ranges, suggesting a small amount of heteroscedasticity. Hence this indicates there is no major violation of the homoscedasticity assumption the model’s variance structure is sufficiently robust.
+
+\vspace{0.2cm}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Influencelmm.png}
+\caption[LMM Model- Influential Observations.]{highlighting potential influential points in the LMM model. A few observations lie outside the reference contour lines indicating possible influence on model estimates.}
+\end{figure}
+
+Figure 13 helps detect influential data points that might disproportionately affect the model's estimates. Most observations lie well within the inner contours, suggesting minimal influence.
+A few points such as IDs: 1007, 4903, 4843 etc have high leverage or extreme residuals, but they are isolated. Although, these points might have some influence or might not, it can be left to further exploration. 
+
+\newpage
+\subsubsection{Random Effects Plot}
+
+In Linear Mixed Effects Models (LMMs), random effects allow us to account for group level variability in your case, differences between School-Year combinations (School_Year_Id). The plot generated shows the random intercepts estimated for each group. This controls for unobserved heterogeneity which means it captures variation that isn't explained by the fixed predictors. By allowing intercepts to vary across schools and years, the model can more accurately reflect real-world educational structure.These plots also highlights which school-year groups performed better or worse than the model’s overall mean after accounting for all fixed effects. 
+
+Below, random effects estimates of only selected school year groups are seen 
+(here schools were taken from 2015 and 2019) and the following plot is obtained:
+
+
+```{r,}
+ran_effs <- ranef(lmm_model)$School_Year_Id
+ran_effs[72:91, ]
+```
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Randomeffects.png}
+\caption[LMM Model- Random Effects Plot.]{Random intercept values for each school-year combination in the LMM model, illustrating deviations from the overall mean performance after accounting for fixed effects.Positive values indicate above-average performance, while negative values reflect below-average performance, after controlling for predictor variables.}
+\end{figure}
+
+From Figure 14, the random effect values are on the y-axis i.e. the deviation from the average predicted score due to school-year-specific factors and the unique School\_Year\_Id combinations are on the x-axis. Positive estimates indicates schools in that year performed better than expected, given all other fixed effects. 45\_2015 and 46\_2015 have high positive random effects, meaning those school-year combinations over performed relative to model expectations. Negative estimates indicates schools performed worse than expected even after accounting for predictors like parental support, gender, and location. 41\_2015, 50\_2015, and 5009\_2019 have strong negative random effects implying under performance even after adjusting for all predictors. Many schools centered around zero suggesting average performance relative to expectations.
+
+Hence, this random effects plot reveals the residual influence of schools suggesting that some schools might have other unobserved characteristics that might significantly boost or hinder student outcomes. Recognizing these effects is critical for targeting under performing schools for intervention, identifying best practices in high-performing schools and acknowledging the role of school-level context in educational performance.
+
+\subsubsection{Marginal Effects Plot}
+To gain further insight into the influence of each predictor in the Linear Mixed Effects Model (LMM), marginal effects plots were generated to visualize the predicted mathematics scores across different levels of each categorical variable, while holding all other variables constant. The red dots represent the average predicted score, and the vertical lines indicate 95% confidence intervals.
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{GEeff.png}
+\end{minipage}%
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{PEeff.png}
+\end{minipage}%
+\end{figure}
+
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{PSeff.png}
+\end{minipage}%
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{CAeff.png}
+\end{minipage}%
+\end{figure}
+
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{Loceff.png}
+\end{minipage}%
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{BAeff.png}
+\end{minipage}%
+\end{figure}
+
+
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{TSeff.png}
+\end{minipage}%
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{PAeff.png}
+\end{minipage}%
+\end{figure}
+
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{PDeff.png}
+\end{minipage}%
+\begin{minipage}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{Yeareff.png}
+\end{minipage}%
+\end{figure}
+
+As for the gender, the predicted values of scores show that boys perform significantly better than girls on average. Boys had a predicted score around 370 to 375 compared to girls at approximately 360. The confidence intervals do not fully overlap, reinforcing the statistical significance of this gender-based performance gap. In case of Parent Support, there is a sharp increase in predicted scores from 'Very Low' (~360) to all other levels, which cluster between 465 to 470. This indicates that even a modest increase in parental involvement significantly boosts student performance. The difference is especially stark between 'Very Low' and the rest of the levels.
+
+Unexpectedly, students whose parents have lower levels of education have slightly higher predicted scores compared to those with more advanced education levels. However, the wide and overlapping confidence intervals suggest this trend might not be practically significant and may be influenced by other interacting variables. Students with computer access show a notably higher predicted score (~380) compared to those without (~360), consistent with the model coefficient. This highlights the positive role of digital access in educational achievement, even if confidence intervals show slight overlap. Performance across location types is relatively uniform. Students from remote rural areas have slightly higher predicted scores, while those from suburban and urban areas are marginally lower. However, the overlapping confidence intervals indicate no strong statistical evidence for location-based disparities. There is a clear positive trend from 'Few' to 'Excellent' book availability. Students with access to more books at home have significantly higher predicted scores, with those in the 'Excellent' category reaching approximate 430 versus approximate 360 for 'Few'. This underlines the importance of a resource-rich home learning environment.
+
+Predicted scores do not vary much across levels of reported teacher shortage. While schools with 'None' show marginally higher predicted scores, the confidence intervals are wide and overlapping, suggesting a weak or inconsistent effect. Students from high affluent background have marginally higher predicted scores. However, the overlapping intervals suggest a relatively weak practical effect. As for Percent Disadvantaged, a strong inverse relationship is observed. Students in schools with 'Low' or 'Moderate' levels of disadvantage score higher (~390 to 395), while those in schools with 'Severe' disadvantage score significantly lower (~360). This emphasizes the impact of school socio-economic environment on academic performance. Finally, there is a small but statistically significant drop in predicted scores from TIMSS 2015 to 2019. Students in 2015 scored about 5 points higher on average, though confidence intervals suggest limited practical significance.
+
+Overall, the marginal effects plots provide visual confirmation of the LMM results and help clarify the relative influence of each variable on mathematics performance.
+
+
+
+\subsection{Linear Mixed Effects Models with Interaction terms}
+
+Then, Linear mixed model with interaction terms were considered. Two main predictors considered was Gender and Year. Both the resulted models were then evaluated and compared with the first model (Without the interaction terms). 
+
+These were compared in order to understand whether including the interaction terms in the baseline linear mixed effects model significantly improves the fit and affects the student performance.
+
+**LMM with Gender as the Interaction term**
+
+```{r,echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+lmm_modelg1<- lmer( Scores ~  Parent_Educ + Gender*Parent_Support + 
+Computer_Access + Location + Book_Availability + Teacher_Shortage +
+  Percent_Affluent+ Percent_Disadvantaged + Year +
+            (1 | School_Year_Id),
+  data = train_df)
+```
+
+**LMM with Year as the Interaction term**
+
+```{r, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+lmm_modely1<- lmer(Scores ~ Gender+ Parent_Educ + Parent_Support +
+    Year*Computer_Access + Location + Book_Availability + 
+      Teacher_Shortage + Percent_Affluent+ Percent_Disadvantaged +
+            (1 | School_Year_Id),
+  data = train_df)
+```
+
+After fitting both these models, we compared both of them using ANOVA with the first model. The results obtained are as follows:
+
+```{r,echo=TRUE,results='hide', message=FALSE, warning=FALSE}
+anova(lmm_model,lmm_modelg1)
+```
+
+
+From Table 2, it is clear that including interaction terms between Gender and Parent Support does not significantly improve the model. The p-value of 0.6099 is much greater than 0.05 which means Gender does not significantly change how these factors affect student scores indicating there is no evidence that it moderates the relationships between predictors and scores in a meaningful way.
+
+\vspace{0.2cm}
+\begin{table}[htbp]
+\centering
+\caption{ANOVA(with Gender interaction term)}
+\begin{tabular}{lcccccccc}
+\toprule
+ & \textbf{npar} & \textbf{AIC} &   \textbf{BIC} & \textbf{logLik} & \textbf{-2*log(L)} &  \textbf{Chisq} & \textbf{Df} & \textbf{Pr(>Chisq)}\\
+\midrule             
+lmm\_model &     34 & 57366 & 57590 & -28649 &  57298 &    &    &     \\                    
+lmm\_modelg1 &   38 & 57372 & 57621 & -28648 &  57296 & 2.696 & 4 &  0.6099\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+```{r,echo=TRUE,results='hide', message=FALSE, warning=FALSE}
+anova(lmm_model,lmm_modely1)
+```
+
+From Table 3, including Year based interaction effects also does not significantly improve model fit. The non-significant p-value (> 0.05) indicates that the relationships between predictors and student scores remain fairly consistent across the two years.
+
+\begin{table}[htbp]
+\centering
+\caption{ANOVA(with Year interaction term)}
+\begin{tabular}{lcccccccc}
+\toprule
+ & \textbf{npar} & \textbf{AIC} &   \textbf{BIC} & \textbf{logLik} & \textbf{-2*log(L)} &  \textbf{Chisq} & \textbf{Df} & \textbf{Pr(>Chisq)}\\
+\midrule             
+lmm\_model &    34 & 57366 & 57590 & -28649&  57298 & & &\\                     
+lmm\_modely1&   35 & 57365 & 57595 & -28648&  57295 & 3.4611 & 1 & 0.06283\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Hence, both these interaction terms doesn't really improve the baseline model fit and it remains as non significant factors for the model.
+
+Therefore, the baseline linear mixed model was considered for further analysis. The next model considered is random forest regression algorithm in order to evaluate the prediction.
+
+\subsection{Random Forest Regression Model}
+
+Random forest (RF) regression is a non-parametric ensemble learning method particularly well-suited for predicting continuous outcomes like TIMSS data when there are complex, nonlinear relationships among predictors, when there are many predictors some of which may be irrelevant and also when robustness in dealing missing values, outliers, mulicollinearity etc is essential. Here, we used ranger package (Breiman, L. 2001) as there is a large amount of data and also since it has a complex hierarchical structure, ranger can deal such data with ease.
+
+Random forest allows to explore the combined predictive influence of  school-level variables without assuming a fixed model structure like in LMMs. It’s especially useful for benchmarking model performance or identifying key predictors via variable importance metrics.
+
+
+```{r,echo=TRUE,results='hide', message=FALSE, warning=FALSE}
+rf_model <- ranger(
+formula = Scores ~ Gender + Parent_Educ + Parent_Support + Computer_Access +
+Location + Book_Availability + Teacher_Shortage + Percent_Affluent+
+Percent_Disadvantaged + Year+ School_Year_Id, data = train_df,
+  num.trees = 500,
+  importance= "impurity"
+)
+```
+
+\begin{table}[htbp]
+\centering
+\caption{Random Forest Regression Model Results}
+\begin{tabular}{lc}
+\toprule
+\textbf{Names} & \textbf{Values} \\
+\midrule             
+Type&                             Regression \\
+Number of trees&                  500 \\
+Sample size&                     5270 \\
+Number of independent variables&  11\\ 
+Mtry&                            3\\ 
+Target node size&                5 \\
+Variable importance mode&        impurity \\
+Splitrule&                     variance\\ 
+OOB prediction error (MSE)&       3417.394 \\
+R squared (OOB)&                 0.2329087\\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+From Table 4, the Random Forest regression model was constructed using the ranger package to explore the predictive influence of various student, school, and socio-demographic factors on TIMSS mathematics achievement scores. The model was trained on a data set comprising 5,270 student-level observations using an ensemble of 500 decision trees. This ensemble approach helps reduce the risk of over fitting and increases generalization. At each node split, 3 variables (mtry = 3) were randomly selected from the total of 11 predictor variables, allowing the model to introduce variability and reduce correlation among trees.
+
+The splitting criterion was based on variance reduction, which seeks to maximize the reduction in prediction error at each split and variable importance was evaluated using the impurity based method indicating which predictors contribute most to reducing uncertainty in the model.
+
+The Out-of-Bag (OOB) mean squared error (MSE) which is an internal cross-validation method built into the random forest algorithm was reported as 3417.4. This value reflects the average squared difference between the predicted and actual scores across all OOB samples. While this may seem moderately high in absolute terms, it's important to interpret this within the scale of the TIMSS scores, which typically range between 200 and 800.
+
+The OOB R-squared value of 0.2329087 suggests that the model explains approximately 23.3\% of the variance in math scores. While this may not appear exceptionally strong, it is still a meaningful outcome, especially in the context of educational data where performance is often influenced by complex and unobserved variables such as individual cognitive ability, teacher quality, peer influence and classroom dynamics that are not fully captured in the data set.
+
+In the context of TIMSS, this model underscores the contribution of both individual and contextual variables to academic performance. The inclusion of the School\_Year\_Id random effect term further accounts for the hierarchical structure of the data recognizing that students are nested within schools and years which helps reduce over fitting.
+
+Overall, this analysis validates the utility of Random Forest models for capturing complex, non-linear relationships and interaction effects that are not easily captured by traditional linear models. While the performance is modest, it complements the insights drawn from the linear mixed model and emphasizes the multifaceted nature of educational achievement.
+
+\subsubsection{Variable Importance Plot}
+
+Figure 15 provides valuable insights into which predictors most influence students’ mathematics performance in the TIMSS dataset. 
+```{r,}
+ranger::importance(rf_model)
+```
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Viplot.png}
+\caption[Variance Importance Plot.]{This plot ranks predictors based on their importance scores in the Random Forest model with Book Availability, School-Year ID, and Parental Education emerging as the most influential factors.}
+\end{figure}
+Figure 15 ranks the predictors based on their impurity-based importance which basically means how much each variable reduces prediction error across all trees in the forest.
+
+High importance variables are indicated in dark green. Here, Book Availability is the most important predictor. Greater access to books at home likely supports learning and academic performance. Then, School_Year_Id reflects school-specific effects for each year, capturing unobserved heterogeneity such as teaching quality, infrastructure, or peer effects. Parental education level is a key socio-economic factor influencing student learning environments and expectations and schools with students from higher disadvantaged economic backgrounds showed lower performance, indicating socioeconomic disparities. Location also had a significant effect on scores indicating school environment may have had a greater influence in student learning outcomes.
+
+Percent_Affluent, Parent_Support, and Teacher_Shortage contribute moderately where they affect learning indirectly through access, encouragement, and resource availability though not as strongly as book availability or parental education. Computer Access and Gender also had low predictive power, possibly due to balanced distributions or overlapping effects with stronger predictors. 
+
+Year was found to have the least influence on prediction accuracy suggesting that the differences in scores between 2015 and 2019 are relatively minor when other factors are accounted for.
+
+\subsection{Prediction}
+
+Both the lmm and random forest models were compared inorder to get valuable insights of the predictive power and to understand which is a better model fit.
+
+\subsubsection{Comparison of both lmm and random forest models}
+
+\begin{table}[htbp]
+\centering
+\caption{Comparison of LMM and RF}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model}&\textbf{Dataset} & \textbf{RMSE} &\textbf{R\_Squared}\\
+\midrule             
+LMM&	Train& 53.39235&	0.3588560\\
+LMM&   Test&	57.82915&	0.3136488\\
+Random Forest& Train&	41.43930&	0.6137910\\
+Random Forest& Test&	60.19517&	0.2563372\\	
+\bottomrule
+\end{tabular}
+\end{table}
+
+From the Table 5, both train and test data predictions were seen as comparing model predictions on both training and test data sets is essential to evaluate how well the model has learned from the data and how reliably it can generalize to unseen situations.
+
+For the LMM model, it achieved an RMSE of 53.39 and an R squared of approximately 0.36 which indicates that the model was able to explain around 36% of the variation in student scores on train data and it under performed on the test data with an RMSE of 57.83 and R squared of about 0.31 which suggests only a slight drop in performance implying the model generalizes reasonably well on unseen data. Overall, the LMM offers a balanced and stable performance across both data sets where it captures the hierarchical structure of the data without overfitting. 
+
+As for the random forest model, it performed exceptionally well on the train data with a lower RMSE of 41.44 and a high R squared of 0.61 which suggests the model learned the training patterns very effectively, capturing complex non-linear relationships and interactions between variables while on the test data, the RMSE increased to 60.20 and R squared dropped to 0.26. This gap between training and test performance may indicate over fitting, where the model fits the training data too closely but doesn't generalize well to new or unseen data.
+
+Hence, overall the LMM model is more stable and generalizes better to unseen data, despite being a simpler model. This makes it a reliable choice when the focus is on understanding relationships and ensuring interpretability. Random forest provides better training performance capturing more complex relationships, but at the cost of reduced generalization. Depending on the goal, either model has its merits where in educational research, the interpretability offered by LMM may be more valuable when the focus is more on intervention strategies while random forest is more sutable when it comes to capturing non linear effects. But, in terms of prediction accuracy on unseen data, the LMM model slightly outperforms the Random forest, offering lower error and higher explained variance. Thus, for robust and interpretable predictions  particularly in educational research, LMM is the more reliable model for predictive accuracy in that context.
+
+
+\subsubsection{Actual vs Predicted Plots}
+
+Actual vs Predicted plot was obtained to visually assess how well a model is performing. Each point on the plot represents a prediction made by the model compared to the actual value. The dashed red line determines if the predictions are perfect or not. That is, if the points lie exactly on the diagonal dashed red line, it indicates a perfect prediction. If the points are closer to the line, it indicates better predictions while if it is spread away from the line, it shows errors in prediction.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\textwidth]{Predvsact.png}
+\caption[Actual vs Predicted Plot.] {These scatterplots compare predicted and actual scores across both training and test datasets for the LMM (top) and RF (bottom) models.The LMM plots show moderate alignment with line indicating better predictive performance on unseen data, while the RF plots demonstrate a tighter clustering along the line, especially in the training set but weaker generalization and overfitting.}
+\end{figure}
+
+
+Figure 16 visually reinforce the numerical results from table. The random forest model shows a very tight fit to the training data, with predictions closely following the ideal line indicating strong fit. However, its test plot reveals a noticeable spread in points especially at the extremes, suggesting overfitting and reduced generalization.
+
+In contrast, the linear mixed model demonstrates consistent spread in both train and test plots. While slightly dispersed points in the test plot, remain relatively close to the diagonal line, confirming stable generalization without huge drops in accuracy.
+
+Based on both the plots and accuracy metrics from Figure 16 and Table 5, the LMM offers better predictive accuracy on unseen data, with lower RMSE and higher R squared on the test set. Though random forest captures more complex patterns, its weaker performance on new data makes it less reliable for general prediction. 
+
+Thus,the above plots highlight that LMM is the better model in terms of predictive accuracy and generalization particularly important in contexts like education where robustness and interpretability are key factors.
+
+
+
+\section{Discussion}
+
+\subsection{Limitations and Further Work}
+This study faced the following challenges that influenced the scope and depth of the analysis.
+First, the TIMSS data used in this research has a hierarchical structure, with students nested within schools and school–year combinations. While this structure was well-suited to linear mixed effects models, it limited the suitability of other statistical approaches that do not explicitly account for such nesting. This meant that some potentially relevant models could not be meaningfully applied without violating key assumptions about the data.
+
+When conducting model diagnostics for the LMM, certain R packages designed for detecting influential observations and outliers such as 'influence.ME' package were not compatible with the data set or with the R version used. As a result, more advanced influence diagnostics could not be performed which in turn restricted further exploration of influential observations.
+
+For the Random Forest analysis, the 'ranger' package was chosen for its ability to handle large data sets efficiently and accommodate complex hierarchical structures. However, this choice introduced another limitation: packages such as 'vivid' and 'marginaleffects', which are useful for producing partial dependence plots and visualizing marginal effects, were not compatible with ranger objects. Even after attempting to work in earlier R versions, these compatibility issues persisted, preventing the generation of certain advanced interpretable plots. This restriction reduced the ability to compare models in greater detail, particularly in terms of visualizing non-linear relationships and interaction effects.
+
+Finally, while reviewing prior research, access to some relevant literature was restricted due to paywalls. This meant that certain studies could only be examined through abstracts or secondary references, which may have limited the depth of the literature review and the breadth of comparisons to existing findings.
+
+Future work can address the limitations identified in this study and extend the analysis in several ways. First, given the hierarchical nature of the data set, exploring additional models specifically designed for multi-level data could provide richer insights. Models such as Bayesian hierarchical models or Generalized Additive Mixed Models (GAMMs) can be explored which can handle complex non-linear relationships while accounting for school–level clustering. These methods could be compared alongside the LMM and RF models to assess both predictive accuracy and interpretability in this context.
+
+For influence diagnostics in the LMM, alternative tools or workflows could be explored to overcome the compatibility issues experienced with influence.ME. In terms of the Random Forest analysis, switching from ranger to a package that maintains similar efficiency but offers greater compatibility with interpretability tools, such as randomForestSRC, could enable the generation of partial dependence plots and marginal effects visualizations. 
+
+Another potential extension is to expand the variable set by incorporating additional publicly available TIMSS background data or linking the data set with external indicators such as regional socio-economic statistics or school-level resource data. This could improve the explanatory power of the models and allow for more nuanced policy recommendations.
+
+Lastly, overcoming the restricted access to certain literature either through institutional subscriptions, open-access requests or by prioritizing freely available high-quality sources would allow for a more comprehensive comparison of findings with previous studies, strengthening the contextual grounding of the results.
+
+By addressing these areas, future work could deepen the analytical scope, improve model interpretation and provide a more robust evidence base for educational policy and practice in Ireland.
+
+\subsection{Conclusions}
+This study analysed Ireland’s performance in the TIMSS mathematics assessments for 2015 and 2019, focusing on how socio-economic, demographic, and educational factors shape student outcomes. By applying both Linear Mixed Effects Models (LMM) and Random Forest (RF) regression, the research examined not only the statistical significance of each factor but also the predictive capability of the models in educational contexts.
+
+The exploratory analysis revealed clear patterns in the data. Access to resources such as computers and books, lower levels of economic disadvantage, and higher levels of reported parental support were consistently linked with better performance. Conversely, disparities persisted between students from rural and urban settings, as well as between students from more disadvantaged backgrounds and those from more affluent ones. Some findings challenged conventional expectations such as parental education showed an inverse relationship with scores in this data set, suggesting the presence of additional contextual influences that go beyond educational qualifications.
+
+The LMM provided interpretable results within the nested school–year structure, highlighting that about 9\% of the variation in scores could be attributed to school–year level differences. Key positive predictors included higher book availability, computer access, and lower levels of disadvantage, while gender differences favored boys by a modest but statistically significant margin. Importantly, location and teacher shortage variables were not significant in the model, suggesting other mediating factors may dilute their direct effects.
+
+The RF model captured more complex and non-linear interactions with book availability, school–year effects, parental education, and socio-economic measures ranking highest in variable importance. However, while the RF performed strongly on the training data, it showed signs of overfitting, with a noticeable drop in accuracy on the test data. In contrast, the LMM maintained more stable performance between training and test sets, making it the more reliable choice for predictive accuracy in unseen scenarios, particularly when interpretability is a priority.
+
+Comparing the two approaches, LMM proved more robust for understanding and explaining relationships between predictors and outcomes, while RF offered complementary insights into variable importance and non-linear effects. Together, they provided a comprehensive picture of the multifaceted influences on mathematics performance in Ireland.
+
+Overall, the results emphasis that improving student outcomes requires more than addressing a single factor. Enhancing access to learning resources, targeting support to disadvantaged groups, and sustaining parental engagement emerge as actionable strategies. The findings also reinforce the importance of accounting for hierarchical data structures in educational research and of using a combination of statistical and machine learning approaches to balance interpretability with predictive power.
+
+
+
+
+
+\newpage
+\section{Bibliography}
+Bates, D., Mächler, M., Bolker, B., & Walker, S. (2015). Fitting linear mixed-effects models using lme4. Journal of Statistical Software, 67(1), 1–48. \url{https://doi.org/10.18637/jss.v067.i01}
+
+Breiman, L. (2001). Random forests. Machine Learning, 45(1), 5–32.
+
+Clerkin, A., Perkins, R., & Cunningham, R. (2016). TIMSS 2015 in Ireland: Mathematics and science in primary and post-primary schools. Educational Research Centre
+
+Clerkin, A., Perkins, R., & Chubb, E. (2020). TIMSS 2019 in Ireland: Mathematics and science in primary and post-primary schools. Educational Research Centre.
+
+Cutler, D. R., Edwards Jr, T. C., Beard, K. H., Cutler, A., Hess, K. T., Gibson, J., & Lawler, J. J. (2007). Random forests for classification in ecology. Ecology, 88(11), 2783–2792. \url{https://doi.org/10.1890/07-0539.1}
+
+Gustafsson, J. E., Nilsen, T., & Hansen, K. Y. (2019). School characteristics moderating the relation between student socioeconomic status and mathematics achievement in Grade 8. TIMSS and PIRLS International Study Center.
+
+Fox, J., & Weisberg, S. (2018). Visualizing fit and lack of fit in complex regression models with predictor effect plots and partial residuals. Journal of Statistical Software, 87(9), 1–27.
+
+Kuhn, M., & Wickham, H. (2020). rsample: General resampling infrastructure (v 1.1.1)
+
+Kuznetsova, A., Brockhoff, P. B., & Christensen, R. H. B. (2017). lmerTest package: Tests in linear mixed effects models. Journal of Statistical Software, 82(13), 1–26.
+
+Liaw, A., & Wiener, M. (2002). Classification and regression by randomForest. R News, 2(3), 18–22.
+
+Ludecke, D., Ben-Shachar, M. S., Patil, I., Waggoner, P., & Makowski, D. (2021). performance: An R package for assessment, comparison and testing of statistical models. Journal of Open Source Software, 6(60), 3139.
+
+Lüdecke, D. (2023). sjPlot: Data visualization for statistics in social science (v 2.8.15) \url{https://CRAN.R-project.org/package=sjPlot}
+
+Martin, M. O., Mullis, I. V. S., & Hooper, M. (Eds.). (2016). Methods and procedures in TIMSS 2015. TIMSS & PIRLS International Study Center, Boston College. \url{https://timssandpirls.bc.edu/publications/timss/2015-methods.html}
+
+Mullis, I. V. S., Martin, M. O., Foy, P., Kelly, D. L., & Fishbein, B. (2020). TIMSS 2019 international results in mathematics and science. TIMSS & PIRLS International Study Center, Boston College. \url{https://timssandpirls.bc.edu/timss2019/international-results/}
+
+OECD. (2018). Equity in education: Breaking down barriers to social mobility. OECD Publishing.
+
+Perkins, R., Shiel, G., Merriman, B., Cosgrove, J., & Moran, G. (2010). Learning from primary school: Timss 2007 in Ireland. Educational Research Centre
+
+Rutkowski, L., Gonzalez, E., Joncas, M., & von Davier, M. (2010). International large-scale assessment data: Issues in secondary analysis and reporting. Educational Researcher, 39(2), 142–151. \url{https://doi.org/10.3102/0013189X10363170}
+
+Sirin, S. R. (2005). Socioeconomic status and academic achievement: A meta-analytic review of research. Review of Educational Research, 75(3), 417–453.
+
+Tierney, N., Cook, D., McBain, M., & Fay, C. (2023). naniar: Data structures, summaries, and visualisations for missing data (R package version 0.7.0).
+
+
+
+
+
+
+
+
+
+
+
+
+
