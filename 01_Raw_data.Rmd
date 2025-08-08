@@ -6,8 +6,9 @@ load("irltim.Rdata")#loaded the Ireland math data
 view(irltim)
 ```
 
-
-
+```{r}
+view(irltimVars)
+```
 
 
 

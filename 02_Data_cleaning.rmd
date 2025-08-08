@@ -1,3 +1,5 @@
+# Data cleaning and pre-processing
+
 ```{r}
 #loading packages
 library(dplyr)
@@ -6,9 +8,6 @@ load("irltim.Rdata")#loaded the Ireland math data
 view(irltim)
 ```
 
-
-
-#Data cleaning and pre-processing
 
 ```{r}
 #Cleaned the raw data by renaming variables and its levels and named it as cleaned_data
@@ -42,11 +41,12 @@ cleaned_data <- cleaned_data %>%
     TRUE ~ Book_Availability
   ))                                      
 
-cleaned_data$Percent_Disadvantaged<-dplyr::recode(cleaned_data$Percent_Disadvantaged,
-                                         "0 TO 10%" = "Low",
-                                        "11 TO 25%" = "Moderate",
-                                        "26 TO 50%" = "High",
-                                        "MORE THAN 50%" = "Severe"
+cleaned_data$Percent_Disadvantaged<-
+  dplyr::recode(cleaned_data$Percent_Disadvantaged,
+                         "0 TO 10%" = "Low",
+                        "11 TO 25%" = "Moderate",
+                        "26 TO 50%" = "High",
+                    "MORE THAN 50%" = "Severe"
 )
 
 cleaned_data$Teacher_Shortage<-dplyr::recode(cleaned_data$Teacher_Shortage,
@@ -93,38 +93,25 @@ colSums(is.na(cleaned_data))
 No missing values exist.
 
 ```{r}
-cleaned_data[!complete.cases(cleaned_data), ]
-```
-
-
-
-```{r}
 library(naniar)
 ```
 *visualize the missing values per variable(by percentage)*
 ```{r}
+#confirmed the absense of NA values by doing a visualization to ensure.
 vis_miss(cleaned_data)
 ```
-*visualize missing values per variable(by count)*
 ```{r}
-gg_miss_var(cleaned_data)
+#Unique number of schools were seen for information required in Data section to know the count of schools
+cleaned_data %>% group_by(Year) %>% summarise(Schools = n_distinct(School_Id))
 ```
-*Missing values summary in tabular format*
+
+
 ```{r}
-miss_var_summary(cleaned_data)
+#Unique number of students per school were seen for information required in Data section to know the count of students and reported it in the Data section.
+cleaned_data %>% group_by(School_Id, Year) %>% summarise(Students = n())
 ```
-*Missing values summary by School_ID*
-```{r}
-miss_by_school<-cleaned_data %>%
-  group_by(School_Id) %>%
-  summarise(
-    total_students = n(),
-    obsvns_missing = sum(is.na(Percent_Affluent)),
-    pct_missing = round(100 * obsvns_missing / total_students, 2)
-  ) %>%
-  arrange(desc(pct_missing)) 
-head(miss_by_school,45)
-```
+
+
 
 
 

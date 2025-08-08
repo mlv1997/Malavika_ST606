@@ -1,3 +1,5 @@
+# Data visualization
+
 ```{r}
 #loading packages
 library(dplyr)
@@ -8,289 +10,368 @@ library(sjPlot)
 
 
 ```{r}
-view(cleaned_data)
+load("irltim.Rdata")#loaded the Ireland math data
+view(irltim)
 ```
 
-#Data visualization
 
-*Distribution of scores by year Plot*
 ```{r}
- ggplot(train_data, aes(x = factor(Year), y = Scores, fill = factor(Year))) +
+#Cleaned the raw data by renaming variables and its levels and named it as cleaned_data
+#kept the original data as it is(irltim)
+cleaned_data <- irltim %>%
+  select(stu_id, math, sex,parent_educ, parent_support, school_id, percent_affluent, percent_disadvantaged, computer, book, shortage_math_teachers, location, year) %>%
+  rename(
+    ID = stu_id,
+    Scores = math,
+    Gender = sex,
+    Parent_Educ=parent_educ,
+    Parent_Support = parent_support,
+    Computer_Access = computer,
+    Book_Availability = book,
+    Teacher_Shortage = shortage_math_teachers,
+    School_Id = school_id,
+    Percent_Affluent=percent_affluent,
+    Percent_Disadvantaged = percent_disadvantaged,
+    Location = location,
+    Year = year
+ )
+
+
+cleaned_data <- cleaned_data %>%
+  mutate(Book_Availability = case_when(
+    Book_Availability %in% c("0-10 BOOKS", "NONE OR VERY FEW (0-10 BOOKS)") ~ "Few",
+    Book_Availability %in% c("11-25 BOOKS", "ENOUGH TO FILL ONE SHELF (11-25 BOOKS)") ~ "Moderate",
+    Book_Availability %in% c("26-100 BOOKS", "ENOUGH TO FILL ONE BOOKCASE (26-100 BOOKS)") ~ "Good",
+    Book_Availability %in% c("101-200 BOOKS", "ENOUGH TO FILL TWO BOOKCASES (101-200 BOOKS)") ~ "Very Good",
+    Book_Availability %in% c("MORE THAN 200", "ENOUGH TO FILL THREE OR MORE BOOKCASES (MORE THAN 200)") ~ "Excellent",
+    TRUE ~ Book_Availability
+  ))                                      
+
+cleaned_data$Percent_Disadvantaged<-
+  dplyr::recode(cleaned_data$Percent_Disadvantaged,
+                         "0 TO 10%" = "Low",
+                        "11 TO 25%" = "Moderate",
+                        "26 TO 50%" = "High",
+                    "MORE THAN 50%" = "Severe"
+)
+
+cleaned_data$Teacher_Shortage<-dplyr::recode(cleaned_data$Teacher_Shortage,
+  "NOT AT ALL" = "None",
+  "A LITTLE"   = "Low",
+  "SOME"       = "Moderate",
+  "A LOT"       ="High"
+)
+                                      
+
+cleaned_data$Location <- dplyr::recode(cleaned_data$Location,
+  "URBAN, DENSELY POPULATED" = "Urban",
+  "URBAN-DENSELY POPULATED" = "Urban_1",
+  "SUBURBAN, ON FRINGE OF URBAN AREA" = "Suburban",
+  "SUBURBAN-ON FRINGE OR OUTSKIRTS OF URBAN AREA" = "Suburban_1",
+  "MEDIUM SIZE CITY OR LARGE TOWN" = "Large Town/City",
+  "SMALL TOWN OR VILLAGE" = "Small Town/Village",
+  "REMOTE RURAL" = "Remote Rural"
+  
+)
+cleaned_data$Percent_Affluent<- dplyr::recode(cleaned_data$Percent_Affluent,
+                                        "0 TO 10%" = "Low",
+                                        "11 TO 25%" = "Moderate",
+                                        "26 TO 50%" = "High",
+                                        "MORE THAN 50%" = "Excellent"
+)
+
+View(cleaned_data)
+```
+
+
+*Distribution of scores by year plot*
+```{r}
+#Data visualization where distribution of scores by year was seen first on the cleaned_data for eda purposes.
+ ggplot(cleaned_data, aes(x = factor(Year), y = Scores, fill = factor(Year))) +
   geom_violin(color = "black", alpha = 0.7, trim = FALSE) +
   geom_boxplot(width = 0.1,fill="white")+
-  scale_fill_manual(values = c("brown","steelblue"))+
+  scale_fill_manual(values = c("orange","brown"))+
   ggtitle("Distribution of Scores by Year") +
   xlab("Year") + 
   ylab("Scores") +
   theme_minimal()
 ```
 
-Here, both years distributions are roughly bell-shaped that is close to normal distribution.
-In both years, The center or mean of the distribution is around 500.
-Also, there's a symmetrical shape aroung the cluster indicating no major shift in average or spread of scores.
 
-*Distribution of Scores by Year and Gender Plot*
-```{r}
-ggplot(cleaned_data, aes(x = factor(Year), y = Scores,fill = factor(Year))) +
-  geom_violin(color = "black", alpha = 0.7, trim = FALSE) +
-  geom_boxplot(width = 0.1, fill="white",outlier.shape = NA, alpha = 0.5) +
-  scale_fill_manual(values = c("lightpink", "steelblue")) +
-  ggtitle("Distribution of Scores by Year and Gender") +
-  xlab("Year & Gender") +
-  ylab("Math Scores") +
-  theme_minimal() +
-  theme(legend.title = element_blank())
-(legend.title = element_blank())
-```
-
-*Plot of Parent Education vs Scores*
-```{r}
-cleaned_data$Parent_Educ<- factor(cleaned_data$Parent_Educ,
-                                  levels=c("less than ISCED2","ISCED2","ISCED3",
-                                           "ISCED4","ISCED6","ISCED7 or 8"))
-cleaned_data$Year<-factor(cleaned_data$Year,levels=c("2015","2019"),ordered=TRUE)
-ggplot(cleaned_data, aes(x = Parent_Educ, y = Scores, fill = Parent_Educ))+
-  geom_boxplot(alpha = 0.6) + 
-  ggtitle('Parent Education vs Scores') +
-  facet_wrap(~Year)
-  scale_fill_brewer(palette = "Set3")
-```
-
-*Plot of Parent Support vs Scores*
-```{r}
-ggplot(cleaned_data, aes(x = Parent_Support, y = Scores, fill = factor(Year))) + 
-  geom_boxplot(alpha=0.6) + 
-  ggtitle('Parent Support vs Scores')+
-  facet_wrap(~Year)
-  scale_fill_brewer(palette = "Set3")
-```
 *Computer Access vs Score based on Year*                   
 ```{r}
-ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Computer_Access)) +
-  geom_boxplot(color = "black", alpha = 0.6) + 
-  ggtitle('Computer Access vs Score based on Year') +
-  scale_fill_manual(values = c("lightgreen", "red")) +
-  facet_wrap(~Gender)
-  theme_minimal()
+#here scores distribution were seen for each level YES and NO for each years. Here, the Gender were filled to understand their performance in each category.
+ggplot(cleaned_data, aes(x = Computer_Access, y = Scores, fill = Gender)) +
+  geom_boxplot(position = position_dodge2(preserve="single"), alpha=0.7,outlier.shape = 21, color = "black",varwidth=TRUE) +
+  ggtitle('Computer Access vs Score based on Year and Gender') +
+  scale_fill_manual(values = c("pink", "steelblue")) +
+  facet_wrap(~Year)
 ```
 
 *Distribution of Scores by Location and Gender*
 ```{r}
+#Since levels such as Suburban_1, Suburban and Urban_1, Urban are same but differently named accordingly represented for separate years. here, the scores distribution is seen of students from different school location.
+
 cleaned_data$Location<- factor(cleaned_data$Location,
-                                  levels=c("Urban","Urban_1","Suburban","Suburban_1","Large Town/City","Small Town/Village","Remote Rural"),
-                                          ordered= TRUE)
-ggplot(cleaned_data, aes(x = Gender, y = Scores, fill = Location)) + 
-  geom_violin(color = "black", alpha = 0.6) + 
-  ggtitle('Distribution of Scores by Location and Gender') + 
-   scale_fill_manual(values=c("navyblue","red","brown","orange","yellow","lightgreen","lightblue")) 
-+facet_wrap(~Year)
-```
-**Interpretation**
+                                  levels=c("Remote Rural","Small Town/Village",
+                                  "Large Town/City", "Suburban_1", "Suburban",
+                                  "Urban_1", "Urban"))
+year2015<-cleaned_data %>% filter(Year == 2015)
+year2019<-cleaned_data %>% filter(Year == 2019)
 
-Overall, all locations show a similar trend of having a center of distribution around 500-600.Urban locations may have slight wider violins. There is also no major differences between both the genders.Both the years shows similar shapes for all locations.
-The width of the violins shows the density of scores and The overall variability (or spread) of scores is shown by the vertical extent of the violin.
-
-*Plot of Distribution of Scores by Book Availability and Gender*
-```{r}
-cleaned_data$Book_Availability = factor(cleaned_data$Book_Availability,
-                                        levels=c("Few","Moderate",
-                                                  "Good","Very Good",
-                                                           "Excellent"),
-                                                            ordered=TRUE)
-ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Book_Availability)) + 
-  geom_violin(color = "black", alpha = 0.6) + 
-  ggtitle('Distribution of Scores by Book Availability and Gender') + 
-  scale_fill_manual(values=c("lightblue","lightgreen","orange","brown","navyblue")) + 
-  facet_wrap(~ Gender)
-```
-*Distribution of Scores by Teacher Shortage Based on Years*
-```{r}
-cleaned_data$Teacher_Shortage =factor(cleaned_data$Teacher_Shortage,
-                                      levels=c("None","Low","Moderate",
-                                                       "High"),ordered=TRUE)
-ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Teacher_Shortage)) + 
-  geom_violin(color = "black", alpha = 0.6) + 
-  ggtitle('Distribution of Scores by Teacher Shortage Based on Years') + 
-  scale_fill_brewer(palette = "Set3")+
-  facet_wrap(~Gender)
-```
-*Distribution of Scores by Percent Affluent Based on Years*
-```{r}
-cleaned_data$Percent_Affluent =factor(cleaned_data$Percent_Affluent,
-                                      levels=c("Low","Moderate",
-                                              "High","Excellent"),ordered=TRUE)
-ggplot(cleaned_data, aes(x = Gender, y = Scores, fill = Percent_Affluent)) + 
-  geom_violin(alpha = 0.6) + 
-  ggtitle('Distribution of Scores by Percent Affluent Based on Years') + 
-  scale_fill_brewer(palette = "Set1")+
-  facet_wrap(~Year)
-```
-*Distribution of Scores by Percent Disadvantaged Based on Years*
-```{r}
-cleaned_data$Percent_Disadvantaged=factor(cleaned_data$Percent_Disadvantaged,
-                                      levels=c("Low","Moderate",
-                                              "High","Severe"),ordered=TRUE)
-ggplot(cleaned_data, aes(x = Year, y = Scores, fill = Percent_Disadvantaged)) + 
-  geom_violin(alpha = 0.6) + 
-  ggtitle('Distribution of Scores by Percent Disadvantaged Based on Years') + 
-  scale_fill_brewer(palette = "Set1")+
-  facet_wrap(~Gender)
+ggplot(year2015, aes(x = Gender, y = Scores, fill = Location)) + 
+geom_boxplot(position = position_dodge2(preserve="single"), alpha=0.7,
+             outlier.shape = 21, color = "black",varwidth=TRUE)+ 
+ggtitle('Scores vs Location and Gender(2015)') + 
+scale_fill_manual(values=c("navyblue","brown","yellow","lightgreen","lightblue"))+
+theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+)
+  
+ggplot(year2019, aes(x = Gender, y = Scores, fill = Location)) + 
+geom_boxplot(position = position_dodge2(preserve="single"), alpha=0.7,
+             outlier.shape = 21, color = "black",varwidth=TRUE)+ 
+ggtitle('Scores vs Location and Gender(2019)') + 
+scale_fill_manual(values=c("red","orange","yellow","lightgreen","lightblue"))+
+theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+) 
 ```
 
-#Combined Box Plot by School ID     
+#Combined Plot of top 10 schools by gender dominance
 ```{r}
-
-school_means <- cleaned_data %>%
+#selected 10 schools out of all schools who performed best.
+top_10_schools <- cleaned_data %>%
   group_by(School_Id) %>%
   summarise(Mean_Score = mean(Scores, na.rm = TRUE)) %>%
-  arrange(Mean_Score)
+  arrange(desc(Mean_Score)) %>%
+  slice_head(n = 10)
 
-top_bottom_schools <- bind_rows(
-  slice_head(school_means, n = 5),
-  slice_tail(school_means, n = 5)
-)
+#filtered the top 10 schools and assigned it to another variable 
+top_data <- cleaned_data %>%
+  filter(School_Id %in% top_10_schools$School_Id)
 
-filtered_data <- cleaned_data %>%
-  filter(School_Id %in% top_bottom_schools$School_Id)
+#select school type(Boys only/ Girls Only or Mixed)
+school_type_top <- top_data %>%
+  group_by(School_Id) %>%
+  summarise(
+    num_boys = sum(Gender == "BOY"),
+    num_girls = sum(Gender == "GIRL")
+  ) %>%
+  mutate(
+    School_Type = case_when(
+      num_boys > 0 & num_girls == 0 ~ "Boys Only",
+      num_girls > 0 & num_boys == 0 ~ "Girls Only",
+      TRUE ~ "Mixed"
+    ),
+    Label = paste0("(", School_Type, ")")
+  )
 
+#merge school type info with top 10 Data
+top_data <- top_data %>%
+  left_join(school_type_top %>% select(School_Id, Label), by = "School_Id") %>%
+  mutate(School_Label = paste0(School_Id, "\n", Label))
 
-filtered_data$School_Id <- as.factor(filtered_data$School_Id)
-
-
-ggplot(filtered_data, aes(x = reorder(School_Id, Scores), y = Scores , fill = Gender)) +
-  geom_boxplot(alpha = 0.7, color = "black") +
+#plotting boxplots for Scores by Gender in top 10 Schools 
+ggplot(top_data, aes(x = reorder(School_Label, Scores), y = Scores, fill = Gender)) +
+   geom_boxplot(position = position_dodge2(preserve="single"), alpha=0.7,
+                outlier.shape = 21, color = "black",varwidth=TRUE) +
   labs(
-    title = "Best and Worst Performed 5 Schools by Scores w.r.t Gender",
-    x = "School ID", y = "Scores"
+    title = "Best Performed 10 Schools by Scores and Gender Dominance",
+    x = "School ID (School Type)",
+    y = "Scores"
   ) +
+  scale_fill_manual(values = c("GIRL" = "lightpink", "BOY" = "steelblue")) +
   theme_minimal() +
-  theme(legend.position = "bottom")+
-  scale_fill_manual(values=c("lightpink","steelblue"))
+  theme(legend.position = "bottom")
 ```
-*Interpretation*
-Here school_ids 139, 93, 27 performs worse and overall boys perform better than girls while school_ids 65,5083,110 performs best and overall boys gives a better performance.
 
-#Combined Genderwise plot of scores based on all variables 
+#Combined plot of worst 10 schools by gender dominance
 ```{r}
+#selected 10 schools out of all schools who performed worst.
+bottom_10_schools <- cleaned_data %>%
+  group_by(School_Id) %>%
+  summarise(Mean_Score = mean(Scores, na.rm = TRUE)) %>%
+  arrange(Mean_Score) %>%
+  slice_head(n = 10)
 
-long_data <- cleaned_data %>%
-  mutate(across(c(Gender, Parent_Educ, Parent_Support, Location, 
-                  Book_Availability, Teacher_Shortage, Percent_Affluent,
-                  Percent_Disadvantaged, Computer_Access, Year), 
-                as.character)) %>%
+#filtered the bottom 10 schools and assigned it to another variable 
+bottom_data <- cleaned_data %>%
+  filter(School_Id %in% bottom_10_schools$School_Id)
+
+#select school type(Boys only/ Girls Only or Mixed)
+school_type <- bottom_data %>%
+  group_by(School_Id) %>%
+  summarise(
+    num_boys = sum(Gender == "BOY"),
+    num_girls = sum(Gender == "GIRL")
+  ) %>%
+  mutate(
+    School_Type = case_when(
+      num_boys > 0 & num_girls == 0 ~ "Boys Only",
+      num_girls > 0 & num_boys == 0 ~ "Girls Only",
+      TRUE ~ "Mixed"
+    ),
+    Label = paste0("(", School_Type, ")")
+  )
+
+#merge school type info with bottom 10 Data
+bottom_data <- bottom_data %>%
+  left_join(school_type %>% select(School_Id, Label), by = "School_Id") %>%
+  mutate(School_Label = paste0(School_Id, "\n", Label))
+
+#plotting boxplots for Scores by Gender in worst 10 Schools 
+ggplot(bottom_data, aes(x = reorder(School_Label, Scores), y = Scores, fill = Gender)) +
+ geom_boxplot(position = position_dodge2(preserve="single"), alpha=0.7,
+              outlier.shape = 21, color = "black",varwidth=TRUE)+
+  labs(
+    title = "Worst Performed 10 Schools by Scores and Gender Dominance",
+    x = "School ID (School Type)",
+    y = "Scores"
+  ) +
+  scale_fill_manual(values = c("GIRL" = "lightpink", "BOY" = "steelblue")) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+#Combined Plot of Gender-wise score distribution of selected variables
+
+```{r}
+#modified data for Parent_Educ and Parent_Support
+long_data1 <- cleaned_data %>%
+  mutate(across(c(Gender, Parent_Educ, Parent_Support), as.character)) %>%
   pivot_longer(
-    cols = c(Parent_Educ, Parent_Support, Location, 
-             Book_Availability, Teacher_Shortage,Percent_Affluent,
-             Percent_Disadvantaged, Computer_Access, Year),
+    cols = c(Parent_Educ, Parent_Support),
     names_to = "Variable",
     values_to = "Category"
   )
 
+#set category levels for display in plots
+long_data1 <- long_data1 %>%
+  mutate(
+    Category = case_when(
+      Variable == "Parent_Educ" ~ factor(Category, levels = c("less than ISCED2", "ISCED2", "ISCED3", 
+                   "ISCED4", "ISCED5", "ISCED6", "ISCED7 or 8")),
+      Variable == "Parent_Support" ~ factor(Category,levels = c("VERY LOW", "LOW", "MEDIUM", "HIGH", 
+                                                                "VERY HIGH")),
+      TRUE ~ as.factor(Category)
+    )
+  )
 
-long_data <- long_data %>%
-  mutate(Category = case_when(
-    Variable == "Gender" ~ factor(Category, levels = c("GIRL", "BOY")),
-    Variable == "Parent_Educ" ~ factor(Category, levels = c("less than ISCED2", "ISCED2", "ISCED3", "ISCED4", "ISCED6", "ISCED7 or 8")),
-    Variable == "Parent_Support" ~ factor(Category, levels = c("LOW", "MEDIUM", "HIGH", "VERY HIGH")),
-    Variable == "Location" ~ factor(Category, levels = c("Urban", "Urban_1","Suburban","Suburban_1",
-                                             "Large Town/City", "Small Town/Village", "Remote Rural")),
-    Variable == "Book_Availability" ~ factor(Category, levels = c("Few", "Moderate", "Good", "Very Good", "Excellent")),
-    Variable == "Teacher_Shortage" ~ factor(Category, levels = c("None", "Low", "Moderate", "High")),
-    Variable == "Percent_Affluent" ~ factor(Category, levels = c("Low", "Moderate", "High", "Excellent")),
-    Variable == "Percent_Disadvantaged" ~ factor(Category, levels = c("Low", "Moderate", "High", "Severe")),
-    Variable == "Computer_Access" ~ factor(Category, levels = c("NO", "YES")),
-    Variable == "Year" ~ factor(Category, levels = c("2015", "2019")),
-    TRUE ~ as.factor(Category)
-  ))
-
-
-ggplot(long_data, aes(x = Category, y = Scores, colour = Category)) +
-  geom_boxplot() +
-  facet_grid(Gender ~ Variable, scales = "free_x", switch = "x") +
-  theme_minimal() +
+#plotting boxplots for Gender-wise scores across categorical variables.
+ggplot(long_data1, aes(x = Category, y = Scores, fill = Gender)) +
+  geom_boxplot(position = position_dodge2(preserve="single"),#separate boxes for each gender
+               alpha = 0.7,
+               outlier.shape = 21, color = "black",varwidth=TRUE) +
+  facet_wrap(~ Variable, scales = "free_x", nrow = 1) +
   labs(
     title = "Gender-wise Distribution of Scores by Categorical Variables",
     x = "Category", y = "Scores"
   ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+  scale_fill_manual(values = c("GIRL" = "pink", "BOY" = "steelblue")) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size =12),
+    legend.position = "bottom",
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12),
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 14)
+  )
 ```
-
-
-#Combined Genderwise plot of scores based on selected variables(significant) 
 ```{r}
-
-long_data <- cleaned_data %>%
-  mutate(across(c(Gender, Parent_Educ, Parent_Support, 
-                  Book_Availability,Percent_Disadvantaged), 
-                as.character)) %>%
+#set data for Book_Availability and Teacher_Shortage
+long_data2 <- cleaned_data %>%
+  mutate(across(c(Gender, Book_Availability, Teacher_Shortage), as.character)) %>%
   pivot_longer(
-    cols = c(Parent_Educ, Parent_Support, 
-             Book_Availability,Percent_Disadvantaged),
+    cols = c(Book_Availability, Teacher_Shortage),
     names_to = "Variable",
     values_to = "Category"
   )
 
+#set category levels for display in plots
+long_data2 <- long_data2 %>%
+  mutate(
+    Category = case_when(
+      Variable == "Book_Availability" ~ factor(Category,levels = c("Few", "Moderate", "Good", 
+                                                                   "Very Good",   "Excellent")),
+      Variable == "Teacher_Shortage" ~ factor(Category,levels = c("None", "Low", "Moderate", "High")),
+      TRUE ~ as.factor(Category)
+    )
+  )
 
-long_data <- long_data %>%
-  mutate(Category = case_when(
-    Variable == "Gender" ~ factor(Category, levels = c("GIRL", "BOY")),
-    Variable == "Parent_Educ" ~ factor(Category, levels = c("less than ISCED2", "ISCED2", "ISCED3", "ISCED4", "ISCED6", "ISCED7 or 8")),
-    Variable == "Parent_Support" ~ factor(Category, levels = c("LOW", "MEDIUM", "HIGH", "VERY HIGH")),
-    Variable == "Book_Availability" ~ factor(Category, levels = c("Few", "Moderate", "Good", "Very Good", "Excellent")),
-    Variable == "Percent_Disadvantaged" ~ factor(Category, levels = c("Low", "Moderate", "High", "Severe")),
-    TRUE ~ as.factor(Category)
-  ))
-
-
-ggplot(long_data, aes(x = Category, y = Scores, colour = Category)) +
-  geom_boxplot() +
-  facet_grid(Gender ~ Variable,scales = "free_x", switch = "x") +
-  theme_minimal() +
+#plotting boxplots for Gender-wise scores across categorical variables.
+ggplot(long_data2, aes(x = Category, y = Scores, fill = Gender)) +
+  geom_boxplot(position = position_dodge2(preserve="single"), alpha = 0.7,
+               outlier.shape = 21, color = "black",varwidth=TRUE) +
+  facet_wrap(~ Variable, scales = "free_x", nrow = 1) +
   labs(
-    title = "Gender-wise Distribution of Scores based on Variables",
+    title = "Gender-wise Distribution of Scores by Categorical Variables",
     x = "Category", y = "Scores"
   ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-#Combined Scores Plot of selected variables by Location
-```{r}
-
-school_means <- cleaned_data %>%
-  group_by(School_Id, Location) %>%
-  summarise(Mean_Score = mean(Scores, na.rm = TRUE), .groups = "drop") %>%
-  arrange(Mean_Score)
-
-
-top_bottom_schools <- bind_rows(
-  slice_head(school_means, n = 5),
-  slice_tail(school_means, n = 5)
-)
-
-
-filtered_data <- cleaned_data %>%
-  filter(School_Id %in% top_bottom_schools$School_Id)
-
-filtered_data <- filtered_data %>%
-  mutate(School_Location = paste(School_Id, "(", Location, ")", sep = ""))
-
-
-filtered_data$School_Location <- as.factor(filtered_data$School_Location)
-
-ggplot(filtered_data, aes(x = reorder(School_Location, Scores), y = Scores, fill = Location)) +
-  geom_boxplot(alpha = 0.7, color = "black")+
-  labs(
-    title = "Top 5 and Bottom 5 Schools by Score and Location",
-    x = "School (Location)",
-    y = "Math Scores"
-  ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)+
+  scale_fill_manual(values = c("GIRL" = "pink", "BOY" = "steelblue")) +
   theme_minimal() +
-  scale_fill_brewer(palette = "Spectral")+
-  theme(legend.position = "bottom"))
+  theme(
+     axis.text.x = element_text(angle = 45, hjust = 1, size =12),
+    legend.position = "bottom",
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12),
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 14)
+  )
 ```
+```{r}
+#set data for Percent_Affluent and Percent_Disadvantaged
+long_data3 <- cleaned_data %>%
+  mutate(across(c(Gender, Percent_Affluent, Percent_Disadvantaged), as.character)) %>%
+  pivot_longer(
+    cols = c(Percent_Affluent, Percent_Disadvantaged),
+    names_to = "Variable",
+    values_to = "Category"
+  )
+
+#set category levels for display in plots
+long_data3 <- long_data3 %>%
+  mutate(
+    Category = case_when(
+     Variable == "Percent_Affluent" ~ factor(Category, 
+                            levels = c("Low", "Moderate", "High", "Excellent")),
+      Variable == "Percent_Disadvantaged" ~ factor(Category, 
+        levels = c("Low", "Moderate", "High", "Severe")),
+      TRUE ~ as.factor(Category)
+    )
+  )
+
+#plotting boxplots for Gender-wise scores across categorical variables.
+ggplot(long_data3, aes(x = Category, y = Scores, fill = Gender)) +
+  geom_boxplot(position = position_dodge2(preserve="single"), alpha = 0.7, 
+               outlier.shape = 21, color = "black",varwidth=TRUE)  +
+  facet_wrap(~ Variable, scales = "free_x", nrow = 1) +
+  labs(
+    title = "Gender-wise Distribution of Scores by Categorical Variables",
+    x = "Category", y = "Scores"
+  ) +
+  scale_fill_manual(values = c("GIRL" = "pink", "BOY" = "steelblue")) +
+  theme_minimal() +
+  theme(
+     axis.text.x = element_text(angle = 45, hjust = 1, size =12),
+    legend.position = "bottom",
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12),
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 14)
+  )
+```
+
+
 
 
 

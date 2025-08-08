@@ -1,3 +1,5 @@
+# Data Modelling 
+
 ```{r}
 #loading packages
 library(dplyr)
@@ -5,57 +7,134 @@ library(tidyverse)
 library(ggplot2)
 library(lme4)
 library(sjPlot)
-library(rsample)
 library(ranger)
+library(rsample)
 library(performance)
+```
+
+```{r}
+load("irltim.Rdata")#loaded the Ireland math data
+view(irltim)
 ```
 
 
 ```{r}
-view(cleaned_data)
+#Cleaned the raw data by renaming variables and its levels and named it as cleaned_data
+#kept the original data as it is(irltim)
+cleaned_data <- irltim %>%
+  select(stu_id, math, sex,parent_educ, parent_support, school_id, percent_affluent, percent_disadvantaged, computer, book, shortage_math_teachers, location, year) %>%
+  rename(
+    ID = stu_id,
+    Scores = math,
+    Gender = sex,
+    Parent_Educ=parent_educ,
+    Parent_Support = parent_support,
+    Computer_Access = computer,
+    Book_Availability = book,
+    Teacher_Shortage = shortage_math_teachers,
+    School_Id = school_id,
+    Percent_Affluent=percent_affluent,
+    Percent_Disadvantaged = percent_disadvantaged,
+    Location = location,
+    Year = year
+ )
+
+
+cleaned_data <- cleaned_data %>%
+  mutate(Book_Availability = case_when(
+    Book_Availability %in% c("0-10 BOOKS", "NONE OR VERY FEW (0-10 BOOKS)") ~ "Few",
+    Book_Availability %in% c("11-25 BOOKS", "ENOUGH TO FILL ONE SHELF (11-25 BOOKS)") ~ "Moderate",
+    Book_Availability %in% c("26-100 BOOKS", "ENOUGH TO FILL ONE BOOKCASE (26-100 BOOKS)") ~ "Good",
+    Book_Availability %in% c("101-200 BOOKS", "ENOUGH TO FILL TWO BOOKCASES (101-200 BOOKS)") ~ "Very Good",
+    Book_Availability %in% c("MORE THAN 200", "ENOUGH TO FILL THREE OR MORE BOOKCASES (MORE THAN 200)") ~ "Excellent",
+    TRUE ~ Book_Availability
+  ))                                      
+
+cleaned_data$Percent_Disadvantaged<-
+  dplyr::recode(cleaned_data$Percent_Disadvantaged,
+                         "0 TO 10%" = "Low",
+                        "11 TO 25%" = "Moderate",
+                        "26 TO 50%" = "High",
+                    "MORE THAN 50%" = "Severe"
+)
+
+cleaned_data$Teacher_Shortage<-dplyr::recode(cleaned_data$Teacher_Shortage,
+  "NOT AT ALL" = "None",
+  "A LITTLE"   = "Low",
+  "SOME"       = "Moderate",
+  "A LOT"       ="High"
+)
+                                      
+
+cleaned_data$Location <- dplyr::recode(cleaned_data$Location,
+  "URBAN, DENSELY POPULATED" = "Urban",
+  "URBAN-DENSELY POPULATED" = "Urban_1",
+  "SUBURBAN, ON FRINGE OF URBAN AREA" = "Suburban",
+  "SUBURBAN-ON FRINGE OR OUTSKIRTS OF URBAN AREA" = "Suburban_1",
+  "MEDIUM SIZE CITY OR LARGE TOWN" = "Large Town/City",
+  "SMALL TOWN OR VILLAGE" = "Small Town/Village",
+  "REMOTE RURAL" = "Remote Rural"
+  
+)
+cleaned_data$Percent_Affluent<- dplyr::recode(cleaned_data$Percent_Affluent,
+                                        "0 TO 10%" = "Low",
+                                        "11 TO 25%" = "Moderate",
+                                        "26 TO 50%" = "High",
+                                        "MORE THAN 50%" = "Excellent"
+)
+
+View(cleaned_data)
+```
+
 ```
 
 
 #Splitting into train and test data 
 ```{r}
-df_Year <- cleaned_data%>%
+#splitting train and test data where School_Id is grouped with year assigned to a new variable School_Year_Id which is be used for further modelling.
+ timss_df<- cleaned_data%>%
    mutate(
-    School_Id=factor(School_Id),
-    Year=factor(Year,levels=c("2015","2019")),
-    Gender=factor(Gender,levels=c("GIRL","BOY")),
-    Parent_Educ=factor(Parent_Educ,levels=c("less than ISCED2",
-                                          "ISCED2",
-                                          "ISCED3","ISCED4","ISCED6",
-                                          "ISCED7 or 8")),
-    Parent_Support=factor(Parent_Support,levels=c("VERY LOW","LOW","MEDIUM","HIGH",
-                                                  "VERY HIGH")),
-    Computer_Access=factor(Computer_Access,levels=c("YES","NO")),
-    Location = factor(Location,levels=c("Urban","Urban_1","Suburban",
-                                        "Suburban_1",
-                                        "Large Town/City",
-                                        "Small Town/Village",
-                                        "Remote Rural")),
-    Book_Availability = factor(Book_Availability,
-                               levels=c("Few","Moderate","Good",
-                                        "Very Good","Excellent"),
-                                          ),
-    Teacher_Shortage =factor(Teacher_Shortage,levels=c("None","Low","Moderate",
-                                                       "High")),
-    Percent_Affluent=factor(Percent_Affluent,levels=c("Low","Moderate","High",
-                                                      "Excellent")),
-   
-    Percent_Disadvantaged=factor(Percent_Disadvantaged,
-                                 levels=c("Low", "Moderate","High","Severe"),
-                                                                 ))
+    School_Year_Id = paste(School_Id, Year,sep="_"), 
+    School_Year_Id=factor(School_Year_Id),
+    Year=relevel(factor(as.character(Year,
+                levels=c("2015","2019"))),
+                ref="2015"),
+    Gender=relevel(factor(as.character(Gender,
+              levels=c("GIRL","BOY"))),
+                ref="GIRL"),
+    Parent_Educ=relevel(factor(as.character(Parent_Educ,
+           levels=c("less than ISCED2","ISCED2","ISCED3","ISCED4",
+               "ISCED5","ISCED6","ISCED7 or 8"))),
+                ref="less than ISCED2"),
+    Parent_Support=relevel(factor(as.character(Parent_Support,
+               levels=c("VERY LOW","LOW","MEDIUM","HIGH","VERY HIGH"))),
+                ref="VERY LOW"),
+    Computer_Access=relevel(factor(as.character(Computer_Access,
+                levels=c("NO","YES"))),
+                ref="NO"),
+    Location = relevel(factor(as.character(Location,
+        levels=c("Remote Rural","Small Town/Village","Large Town/City","Suburban_1", "Suburban","Urban_1","Urban"))),
+                  ref="Remote Rural"),
+    Book_Availability = relevel(factor(as.character(Book_Availability,
+      levels=c("Few","Moderate","Good","Very Good","Excellent"))),
+                  ref="Few"),
+    Teacher_Shortage =relevel(factor(as.character(Teacher_Shortage,                            levels=c("High","Moderate","Low","None"))),
+                  ref="High"),
+    Percent_Affluent=relevel(factor(as.character(Percent_Affluent,
+            levels=c("Low","Moderate","High", "Excellent"))),
+                  ref="Low"),
+    Percent_Disadvantaged=relevel(factor(as.character(Percent_Disadvantaged,
+          levels=c("Severe","High","Moderate","Low"))),
+                 ref="Severe")
+    )
 ```
  
  
 ```{r} 
-set.seed(123) 
-
-#Splitted rows into train and test data randomly and for each school_id year group 
-df_split <- df_Year %>%
-  group_by(School_Id, Year) %>%
+#splitting it in a way where School_Year_Id is included in both train and test data
+set.seed(123)
+df_mod <-timss_df%>%
+  group_by(School_Year_Id) %>%
   mutate(split = sample(
     c("train", "test"),
     size = n(),
@@ -64,18 +143,25 @@ df_split <- df_Year %>%
   )) %>%
   ungroup()
 
-#Created train and test datasets
-train_data <- df_split %>% filter(split == "train")
-test_data  <- df_split %>% filter(split == "test")
+
+train_df <- df_mod %>% filter(split == "train")
+test_df  <- df_mod %>% filter(split == "test")
+str(train_df)
+str(test_df)
 ```
+
+
 
 #lmm model of both years
 ```{r}
-lmm_model31<-lmer(Scores ~ Gender+ Parent_Support+ Parent_Educ+ Computer_Access+
-                   Location + Book_Availability + Teacher_Shortage + Percent_Affluent+ Percent_Disadvantaged + Year+ (1 | School_Id:Year), 
-                  data = train_data)
+#fitting linear mixed model with School_Year_Id as the random effect
+lmm_model<-lmer(Scores ~ Gender+ Parent_Support+ Parent_Educ+ Computer_Access+
+     Location + Book_Availability + Teacher_Shortage + Percent_Affluent+ 
+                    Percent_Disadvantaged + Year+
+                    (1 | School_Year_Id), 
+                  data = train_df)
 
-sjPlot::tab_model(lmm_model31,
+sjPlot::tab_model(lmm_model,
                   show.ci = FALSE, show.aic = TRUE,
                   show.se = TRUE,
                   show.stat = TRUE,
@@ -84,19 +170,60 @@ sjPlot::tab_model(lmm_model31,
 
 *Model Diagnostics*
 ```{r}
-check_collinearity(lmm_model31) %>% plot()
-check_normality(lmm_model31) %>% plot()
-check_heteroscedasticity(lmm_model31) %>% plot()
-check_outliers(lmm_model31) %>% plot()
+#Model assumptions check using performance package
+check_collinearity(lmm_model) %>% plot()
+check_normality(lmm_model) %>% plot()
+check_heteroscedasticity(lmm_model) %>% plot()
+check_outliers(lmm_model) %>% plot()
+```
+
+#Random Effects Plot
+```{r}
+#random effects estimates of school_Year_Id
+ran_effs <- ranef(lmm_model)$School_Year_Id
+ran_effs[72:91, ]
+```
+
+```{r}
+#Plotting the random effects
+library(ggplot2)
+ran_effs_df <- data.frame(School_Year_Id = rownames(ran_effs),
+                                Random_Effect = ran_effs[, 1])  
+ran_effs_subset <- ran_effs_df[72:91, ]
+
+
+ggplot(ran_effs_subset, aes(x = School_Year_Id, y = Random_Effect, fill = School_Year_Id)) +
+  geom_bar(stat="identity", color = "black") +
+  theme_minimal() +
+  labs(title = "Random Effects of Schools",
+       x = "School-Year Combination",
+       y = "Random Effect Value") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+
+```
+#Marginal Effects Plot
+```{r}
+#plotting marginal effects for each variables
+plot_model(lmm_model, type="pred", terms="Gender")
+plot_model(lmm_model, type = "pred", terms = "Parent_Support")
+plot_model(lmm_model,type="pred",terms="Parent_Educ")
+plot_model(lmm_model,type="pred",terms="Computer_Access")
+plot_model(lmm_model, type="pred",terms="Location")
+plot_model(lmm_model, type = "pred", terms = "Book_Availability")
+plot_model(lmm_model,type="pred",terms="Teacher_Shortage")
+plot_model(lmm_model,type="pred",terms="Percent_Affluent")
+plot_model(lmm_model,type="pred",terms="Percent_Disadvantaged")
+plot_model(lmm_model,type="pred",terms="Year")
 ```
 
 #linear mixed model(including Gender interactions) 
 ```{r}
+#fitting linear mixed model with School_Year_Id as the random effect with gender as the interaction term
 lmm_modelg1<- lmer(
-  Scores ~ Gender * (Parent_Educ + Parent_Support + Computer_Access + Location +
-          Book_Availability + Teacher_Shortage +Percent_Affluent+ Percent_Disadvantaged + Year) +
-            (1 | School_Id:Year),
-  data = train_data)
+  Scores ~ Parent_Educ + Gender*Parent_Support + Computer_Access + Location +
+          Book_Availability + Teacher_Shortage +Percent_Affluent+ Percent_Disadvantaged + Year +
+            (1 | School_Year_Id),
+  data = train_df)
 
 # Summary table
 sjPlot::tab_model(lmm_modelg1,
@@ -104,20 +231,25 @@ sjPlot::tab_model(lmm_modelg1,
                   show.se = TRUE, show.stat = TRUE,
                   show.obs = FALSE)
 ```
+
+
 *Model Diagnostics*
 ```{r}
+#model assumptions check
 check_collinearity(lmm_modelg1) %>% plot()
 check_normality(lmm_modelg1) %>% plot()
 check_heteroscedasticity(lmm_modelg1) %>% plot()
 check_outliers(lmm_modelg1) %>% plot()
 ```
+
+
 #linear mixed model(including Year interactions)
 ```{r}
+#fitting linear mixed model with School_Year_Id as the random effect with year as the interaction term
 lmm_modely1<- lmer(
-  Scores ~ Year * (Gender+ Parent_Educ + Parent_Support + Computer_Access + Location +
-          Book_Availability + Teacher_Shortage + Percent_Affluent+ Percent_Disadvantaged) +
-            (1 | School_Id:Year),
-  data = train_data)
+  Scores ~ Gender+ Parent_Educ + Parent_Support + Year*Computer_Access + Location + Book_Availability + Teacher_Shortage + Percent_Affluent+ Percent_Disadvantaged +
+            (1 | School_Year_Id),
+  data = train_df)
 
 # Summary table
 sjPlot::tab_model(lmm_modely1,
@@ -125,70 +257,158 @@ sjPlot::tab_model(lmm_modely1,
                   show.se = TRUE, show.stat = TRUE,
                   show.obs = FALSE)
 ```
+
 *Model Diagnostics*
 ```{r}
+#model assumptions check
 check_collinearity(lmm_modely1) %>% plot()
 check_normality(lmm_modely1) %>% plot()
 check_heteroscedasticity(lmm_modely1) %>% plot()
 check_outliers(lmm_modely1) %>% plot()
 ```
 
+
 #Comparison of lmm models
 ```{r}
-anova(lmm_model31,lmm_modelg1)
+#anova test with simple model and interaction model(gender)
+anova(lmm_model,lmm_modelg1)
 ```
 
 ```{r}
-anova(lmm_model31,lmm_modely1)
+#anova test with simple model and interaction term(year)
+anova(lmm_model,lmm_modely1)
 ```
 Not much significant effect due to the interaction terms included models and 
 neither it improves the fit and therefore the simpler model lmm_model31 can be 
 considered better.
 
 
+
 #Random forest regresssion model
 ```{r}
-rf_ranger <- ranger(
+#fitting a random forest regression model
+rf_model <- ranger(
   formula = Scores ~ Gender + Parent_Educ + Parent_Support + Computer_Access +
-            Location + Book_Availability + Teacher_Shortage + Percent_Affluent+
-            Percent_Disadvantaged + Year+ School_Id,
-  data = train_data,
-  num.trees = 500,
-  importance= "impurity"
+Location + Book_Availability + Teacher_Shortage + Percent_Affluent+
+Percent_Disadvantaged + Year+ School_Year_Id,
+data = train_df, num.trees = 500,
+importance= "impurity"
 )
-rf_ranger
+print(rf_model)
 ```
 
 #Comparison of both lmm(simpler) and random forest models
 ```{r}
-pred_rf <- predict(rf_ranger, data = test_data)$predictions
-rmse_rf <- sqrt(mean((pred_rf - test_data$Scores)^2))
-rsq_rf <- 1 - sum((pred_rf - test_data$Scores)^2) / 
-           sum((test_data$Scores -mean(test_data$Scores))^2)
-```
 
-```{r}
-pred_lmm <- predict(lmm_model31, data = test_data)
-rmse_lmm <- sqrt(mean((pred_lmm - test_data$Scores)^2))
-rsq_lmm <- 1 - sum((pred_lmm - test_data$Scores)^2) / 
-               sum((test_data$Scores- mean(test_data$Scores))^2)
-```
+#Predictions of rf
+pred_rf_tr <- predict(rf_model, data = train_df)$predictions
+pred_rf_te <- predict(rf_model, data = test_df)$predictions
 
-```{r}
+#Rmse of train and test
+rmse_rf_tr <- sqrt(mean((pred_rf_tr - train_df$Scores)^2))
+rmse_rf_te <- sqrt(mean((pred_rf_te - test_df$Scores)^2))
+#Rsquared of train and test
+rsq_rf_tr <- 1 - sum((pred_rf_tr - train_df$Scores)^2) / 
+           sum((train_df$Scores -mean(train_df$Scores))^2)
+rsq_rf_te <- 1 - sum((pred_rf_te - test_df$Scores)^2) / 
+                    sum((test_df$Scores - mean(test_df$Scores))^2)
+
+#Predictions of lmm
+pred_lmm_tr <- predict(lmm_model, newdata = train_df)
+pred_lmm_te <- predict(lmm_model, newdata= test_df)
+
+#Rmse of train and test
+rmse_lmm_tr <- sqrt(mean((pred_lmm_tr - train_df$Scores)^2))
+rmse_lmm_te <- sqrt(mean((pred_lmm_te - test_df$Scores)^2))
+
+#Rsquared of train and test
+rsq_lmm_tr <- 1 - sum((pred_lmm_tr - train_df$Scores)^2) / 
+               sum((train_df$Scores- mean(train_df$Scores))^2)
+rsq_lmm_te<- 1 - sum((pred_lmm_te - test_df$Scores)^2) / 
+                     sum((test_df$Scores - mean(test_df$Scores))^2)
+
+#Print results
 results <- tibble(
-  Model = c("LMM", "Random Forest"),
-  RMSE = c(rmse_lmm, rmse_rf),
-  R_squared = c(rsq_lmm, rsq_rf)
+  Model = rep(c("LMM", "Random Forest"), each = 2),
+  Dataset = rep(c("Train", "Test"), 2),
+  RMSE = c(rmse_lmm_tr, rmse_lmm_te, rmse_rf_tr, rmse_rf_te),
+  R_squared = c(rsq_lmm_tr, rsq_lmm_te, rsq_rf_tr, rsq_rf_te)
 )
 
 print(results)
 ```
 
+
 From the table above, it clearly shows that random forest model generalizes 
-reasonably well compared to lmm model.(While it may fail to generalize to unseen 
-schools as this model only works because the same schools are in both training and test.)
+reasonably well compared to lmm model.(While it may fail to generalize to unseen schools as this model only works because the same schools are in both training and test.
 
 ```{r}
-ranger::importance(rf_ranger)
+#Plotting actual vs predicted values plot on train and test of both lmm and rf models.
+library(gridExtra)
+df_lmm_tr <- data.frame(Actual = train_df$Scores, Predicted = pred_lmm_tr)
+df_lmm_te <- data.frame(Actual = test_df$Scores, Predicted = pred_lmm_te)
+df_rf_tr <- data.frame(Actual = train_df$Scores, Predicted = pred_rf_tr)
+df_rf_te <- data.frame(Actual = test_df$Scores, Predicted = pred_rf_te)
+
+p1 <- ggplot(df_lmm_tr, aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.4, color = "navy") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "LMM: Train Set", x = "Actual", y = "Predicted") +
+  theme_minimal()
+
+p2 <- ggplot(df_lmm_te, aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.4, color = "navy") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "LMM: Test Set", x = "Actual", y = "Predicted") +
+  theme_minimal()
+
+p3 <- ggplot(df_rf_tr, aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.4, color = "skyblue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Random Forest: Train Set", x = "Actual", y = "Predicted") +
+  theme_minimal()
+
+
+p4 <- ggplot(df_rf_te, aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.4, color = "skyblue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Random Forest: Test Set", x = "Actual", y = "Predicted") +
+  theme_minimal()
+
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
 ```
-here, Parent_Educ, Book_Availability, Parent_Support has more importance compared to other variables.
+
+
+
+```{r}
+#important predictors
+ranger::importance(rf_model)
+```
+#Plot of variable importance
+```{r}
+#Plotting Variable importance plot
+imp_values <- ranger::importance(rf_model)
+imp_df <- data.frame(Variable = names(imp_values), Importance = imp_values)
+imp_df$Imp_Category <- cut(imp_df$Importance, 
+                                          breaks = c(-Inf,500000, 1000000, Inf), 
+                                          labels = c("Low", "Medium", "High"))
+
+
+ggplot(imp_df, aes(x = reorder(Variable, Importance), y = Importance, fill = Imp_Category)) +
+  geom_bar(stat = "identity", color = "black") +  
+  coord_flip() +
+  scale_fill_manual(values = c("Low" = "red", "Medium" = "yellow",
+                               "High" = "darkgreen")) +  
+  labs(title = "Variable Importance(Low, Medium, High)",
+       x = "Variables",
+       y = "Importance Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+
+
